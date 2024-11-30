@@ -8,7 +8,7 @@ MXBMRP2 leverages the game's plugin system and memory reading to display a custo
 
 ## Installation
 
-Download the latest ZIP file from the releases page and extract the contents to your MX Bikes plugins folder, typically located at:`'C:\Program Files (x86)\Steam\steamapps\common\MX Bikes\plugins\`).
+Download the latest ZIP file from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page and extract the contents to your MX Bikes plugins folder, typically located at:`'C:\Program Files (x86)\Steam\steamapps\common\MX Bikes\plugins\`).
 
 Your directory should look like this:
 
