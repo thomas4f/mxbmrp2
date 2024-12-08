@@ -34,9 +34,7 @@ __declspec(dllexport) int Startup(char* _szSavePath) {
     if (_szSavePath != nullptr) {
         Logger::getInstance().log("Save path: " + std::string(_szSavePath));
     }
-    else {
-        Logger::getInstance().log("Save path: NULL");
-    }
+
     return REFRESH_RATE;
 }
 
@@ -44,7 +42,7 @@ __declspec(dllexport) int Startup(char* _szSavePath) {
 __declspec(dllexport) void Shutdown() {
 }
 
-// EventInit: Called when event is initialized
+// EventInit: Called when event is initialized (Testing/Race)
 __declspec(dllexport) void EventInit(void* _pData, int _iDataSize) {
     if (_pData == nullptr) {
         Logger::getInstance().log("EventInit received null data");
@@ -56,15 +54,12 @@ __declspec(dllexport) void EventInit(void* _pData, int _iDataSize) {
         return;
     }
 
-    // Delegate to Plugin
     SPluginsBikeEvent_t* psEventData = static_cast<SPluginsBikeEvent_t*>(_pData);
     Plugin::getInstance().onEventInit(*psEventData);
-
 }
 
 // EventDeinit: Called when event is closed
 __declspec(dllexport) void EventDeinit() {
-    // Delegate to Plugin
     Plugin::getInstance().onEventDeinit();
 }
 
@@ -72,10 +67,10 @@ __declspec(dllexport) void EventDeinit() {
 __declspec(dllexport) int DrawInit(int* _piNumSprites, char** _pszSpriteName, int* _piNumFonts, char** _pszFontName) {
     // Retrieve display strings from Plugin
     Plugin& plugin = Plugin::getInstance();
-    const std::vector<std::string>& displayStrs = plugin.getDisplayStrings();
+    const std::vector<std::string>& displayStrs = plugin.getDisplayKeys();
 
     // Access cached Draw configuration
-    const Plugin::DrawConfig& config = plugin.drawConfig_;
+    const Plugin::displayConfig& config = plugin.displayConfig_;
 
     // Specify no sprites
     *_piNumSprites = 0;
@@ -84,8 +79,7 @@ __declspec(dllexport) int DrawInit(int* _piNumSprites, char** _pszSpriteName, in
     // Specify one font
     *_piNumFonts = 1;
 
-    // Allocate memory for font names (assuming only one font)
-    // The game expects a single zero-separated string if multiple fonts are used
+    // Allocate memory for font name
     const char* fontName = config.fontName.c_str();
     size_t fontNameLength = strlen(fontName) + 1; // +1 for the null terminator
 
@@ -102,7 +96,7 @@ __declspec(dllexport) int DrawInit(int* _piNumSprites, char** _pszSpriteName, in
 __declspec(dllexport) void Draw(int _iState, int* _piNumQuads, void** _ppQuad, int* _piNumString, void** _ppString) {
     // Retrieve display strings from Plugin
     Plugin& plugin = Plugin::getInstance();
-    const std::vector<std::string>& displayStrs = plugin.getDisplayStrings();
+    const std::vector<std::string>& displayStrs = plugin.getDisplayKeys();
 
     if (displayStrs.empty()) {
         *_piNumQuads = 0;
@@ -113,14 +107,14 @@ __declspec(dllexport) void Draw(int _iState, int* _piNumQuads, void** _ppQuad, i
     }
 
     // Access cached Draw configuration
-    const Plugin::DrawConfig& config = plugin.drawConfig_;
+    const Plugin::displayConfig& config = plugin.displayConfig_;
 
     // Calculate quad dimensions
     float startX = config.positionX;
     float startY = config.positionY;
     float fontSize = config.fontSize;
-    float lineHeight = fontSize * 1.1f;
-    float quadWidth = lineHeight * 32 / 3; // Close enough ...
+    float lineHeight = config.lineHeight;
+    float quadWidth = config.quadWidth;
     float quadHeight = lineHeight * displayStrs.size();
 
     // Allocate memory for quads using smart pointer
@@ -174,6 +168,11 @@ __declspec(dllexport) void Draw(int _iState, int* _piNumQuads, void** _ppQuad, i
         strings[i].m_fSize = fontSize;
         strings[i].m_iJustify = 0; // Left-justified
         strings[i].m_ulColor = config.fontColor;
+
+        // Check if the string starts with "mxbmrp2" (case-sensitive)
+        if (i == 0 && currentStr.compare(0, 7, "mxbmrp2") == 0) {
+            strings[i].m_ulColor = 0xFF0081CC; /* ABGR */
+        }
     }
 
     *_piNumString = static_cast<int>(numStrings);
@@ -197,7 +196,36 @@ __declspec(dllexport) void RunInit(void* _pData, int _iDataSize) {
     Plugin::getInstance().onRunInit(*psSessionData);
 }
 
-// RunDeinit: Called when bike leaves the track
-__declspec(dllexport) void RunDeinit() {
-    Logger::getInstance().log("RunDeinit called");
+// RaceSession: Called when Session Starts
+__declspec(dllexport) void RaceSession(void* _pData, int _iDataSize) {
+    if (_pData == nullptr) {
+        Logger::getInstance().log("RaceSession received null data");
+        return;
+    }
+
+    if (_iDataSize < sizeof(SPluginsRaceSession_t)) {
+        Logger::getInstance().log("RaceSession received insufficient data size");
+        return;
+    }
+
+    // Delegate to Plugin
+    SPluginsRaceSession_t* psRaceSession = static_cast<SPluginsRaceSession_t*>(_pData);
+    Plugin::getInstance().onRaceSession(*psRaceSession);
+}
+
+// RaceSessionState: Called when Session Ends
+__declspec(dllexport) void RaceSessionState(void* _pData, int _iDataSize) {
+    if (_pData == nullptr) {
+        Logger::getInstance().log("RaceSessionState received null data");
+        return;
+    }
+
+    if (_iDataSize < sizeof(SPluginsRaceSessionState_t)) {
+        Logger::getInstance().log("RaceSessionState received insufficient data size");
+        return;
+    }
+
+    // Delegate to Plugin
+    SPluginsRaceSessionState_t* psRaceSessionState = static_cast<SPluginsRaceSessionState_t*>(_pData);
+    Plugin::getInstance().onRaceSessionState(*psRaceSessionState);
 }

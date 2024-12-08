@@ -15,8 +15,11 @@
 #pragma comment(lib, "ws2_32.lib")
 
 // Constants
-constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9";
+constexpr size_t MAX_STRING_LENGTH = 32;
+constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.1";
 constexpr const char* DATA_DIR = "mxbmrp2_data\\";
+constexpr const char* LOG_FILE = "mxbmrp2.log";
+constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
 
 // Singleton instance
 Plugin& Plugin::getInstance() {
@@ -29,6 +32,7 @@ Plugin::Plugin()
     : configManager_(ConfigManager::getInstance()), memReader_(MemReader::getInstance()) {
     Logger::getInstance().log("Plugin instance created");
 }
+
 // Destructor
 Plugin::~Plugin() {
     Logger::getInstance().log("Plugin instance destroyed");
@@ -37,97 +41,136 @@ Plugin::~Plugin() {
 // Initialize the plugin and other classes
 void Plugin::initialize() {
     // Initialize Logger first
-    Logger::getInstance().setLogFileName("plugins\\" + std::string(DATA_DIR) + "mxbmrp2.log");
+    Logger::getInstance().setLogFileName("plugins\\" + std::string(DATA_DIR) + std::string(LOG_FILE));
     Logger::getInstance().log(std::string(PLUGIN_VERSION) + " initialized.");
 
     // Initialize ConfigManager
-    configManager_.loadConfig("plugins\\" + std::string(DATA_DIR) + "mxbmrp2.ini");
+    configManager_.loadConfig("plugins\\" + std::string(DATA_DIR) + std::string(CONFIG_FILE));
 
     // Initialize MemReader
     memReader_.initialize();
 
     // Now that ConfigManager is loaded, load Draw configuration
-    loadDrawConfig();
+    setDisplayConfig();
 }
-
 
 // Shutdown the plugin
 void Plugin::shutdown() {
     Logger::getInstance().log("Plugin shutting down");
 }
 
-// Method to load Draw-related config values
-void Plugin::loadDrawConfig() {
+// Load Draw-related config values
+void Plugin::setDisplayConfig() {
     try {
         // Load configuration values
-        drawConfig_.fontName = std::string(DATA_DIR) + configManager_.getValue("font_name");
-        drawConfig_.fontSize = std::stof(configManager_.getValue("font_size"));
-        drawConfig_.fontColor = std::stoul(configManager_.getValue("font_color"), nullptr, 16);
-        drawConfig_.backgroundColor = std::stoul(configManager_.getValue("background_color"), nullptr, 16);
-        drawConfig_.positionX = std::stof(configManager_.getValue("position_x"));
-        drawConfig_.positionY = std::stof(configManager_.getValue("position_y"));
+        displayConfig_.fontName = std::string(DATA_DIR) + configManager_.getValue("font_name");
+        displayConfig_.fontSize = std::stof(configManager_.getValue("font_size"));
+        displayConfig_.lineHeight = displayConfig_.fontSize * 1.1f;
+        displayConfig_.fontColor = std::stoul(configManager_.getValue("font_color"), nullptr, 16);
+        displayConfig_.backgroundColor = std::stoul(configManager_.getValue("background_color"), nullptr, 16);
+        displayConfig_.positionX = std::stof(configManager_.getValue("position_x"));
+        displayConfig_.positionY = std::stof(configManager_.getValue("position_y"));
+        displayConfig_.quadWidth = displayConfig_.lineHeight * MAX_STRING_LENGTH / 3; // Close enough
 
         // Check if the font file exists in the "/plugins/" directory
-        if (!std::filesystem::exists("plugins\\" + drawConfig_.fontName)) {
-            throw std::runtime_error("Font file not found: " + drawConfig_.fontName);
+        std::filesystem::path fontPath = std::filesystem::path("plugins") / displayConfig_.fontName;
+        if (!std::filesystem::exists(fontPath)) {
+            throw std::runtime_error("Font file not found: " + fontPath.string());
         }
 
         Logger::getInstance().log("Draw configuration loaded successfully");
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         Logger::getInstance().log(std::string("Error loading Draw configuration: ") + e.what());
         Logger::getInstance().log("Falling back to default Draw configuration values");
 
         // Define default values inline
-        drawConfig_.fontSize = 0.02f;
-        drawConfig_.fontColor = 0xFFFFFFFF;
-        drawConfig_.backgroundColor = 0x7F000000;
-        drawConfig_.positionX = 0.0f;
-        drawConfig_.positionY = 0.0f;
+        displayConfig_.fontSize = 0.025f;
+        displayConfig_.fontColor = 0xFF0081CC;
+        displayConfig_.backgroundColor = 0x7F000000;
+        displayConfig_.positionX = 0.0f;
+        displayConfig_.positionY = 0.0f;
     }
 }
 
-// Getter for display strings for Draw
-std::vector<std::string> Plugin::getDisplayStrings() {
-    std::lock_guard<std::mutex> guard(displayMutex_);
-    return displayStrings_;
+// setDataKeysToDisplay
+void Plugin::setDataKeysToDisplay(const std::unordered_map<std::string, std::string>& dataKeys) {
+    Logger::getInstance().log("Updating data keys");
+
+    std::lock_guard<std::mutex> guard(mutex_); // Lock for both allDataKeys_ and dataKeysToDisplay_
+
+    // Update or add new keys
+    for (const auto& [key, value] : dataKeys) {
+        if (configManager_.getValue(key) == "true") {
+            Logger::getInstance().log(key.substr(0, MAX_STRING_LENGTH));
+            allDataKeys_[key] = value;
+        }
+    }
+
+    // Debug log: Output all data keys and their values
+    // for (const auto& [key, value] : allDataKeys_) {
+    //    Logger::getInstance().log("  " + key + ": " + value);
+    //}
+
+    std::vector<std::string> tempDataKeysToDisplay_;
+
+    // Conditionally add plugin banner
+    if (configManager_.getValue("plugin_banner") == "true") {
+        tempDataKeysToDisplay_.emplace_back(PLUGIN_VERSION);
+    }
+
+    // Update keys to display
+    for (const auto& [configKey, displayName] : configKeyToDisplayNameMap) {
+        auto it = allDataKeys_.find(configKey);
+        if (it != allDataKeys_.end() && !it->second.empty()) {
+            tempDataKeysToDisplay_.emplace_back(displayName + ": " + it->second.substr(0, MAX_STRING_LENGTH));
+        }
+    }
+
+    dataKeysToDisplay_ = std::move(tempDataKeysToDisplay_); // Atomic update
+}
+
+// Public getter for keys to display
+std::vector<std::string> Plugin::getDisplayKeys() {
+    std::lock_guard<std::mutex> guard(mutex_);
+    return dataKeysToDisplay_;
 }
 
 // Helper to convert event types
-std::string getFriendlyEventTypeName(int type) {
+std::string Plugin::getEventTypeDisplayName(int type, const std::string& connectionType) {
     static const std::unordered_map<int, std::string> eventTypeNames = {
         {1, "Testing"},
         {2, "Race"},
-        {4, "Straight Rhythm"},
-        {-1, "Replay"}
+        {4, "Straight Rhythm"}
     };
 
+    // Edge case: Testing when online is called Open Practice
+    if (type == 1 && connectionType != "Offline") {
+        return "Open Practice";
+    }
+
+    // Lookup the type in the map
     auto it = eventTypeNames.find(type);
     return it != eventTypeNames.end() ? it->second : "Unknown";
 }
 
-// Helper to convert session states
-std::string getFriendlySessionStateName(int type, int session) {
+
+// Helper to convert session names
+std::string Plugin::getSessionDisplayName(int type, int session) {
     static const std::unordered_map<int, std::unordered_map<int, std::string>> sessionStateNames = {
         {1, { // Testing
             {0, "Waiting"},
-            {1, "In Progress"},
-            {16, "In Progress (Extended)"},
-            {32, "Completed"}
+            {1, "In progress"}
         }},
         {2, { // Race
             {0, "Waiting"},
             {1, "Practice"},
             {2, "Pre-Qualify"},
             {3, "Qualify"},
-            {4, "Warmup"},
-            {5, "Race 1"},
-            {6, "Race 2"},
-            {16, "In Progress"},
-            {32, "Completed"},
-            {64, "Sighting Lap"},
-            {256, "Pre-Start"},
-            {512, "Race Over"},
-            {1024, "Completed"}
+            {4, "?"}, // Not used?
+            {5, "Warmup"},
+            {6, "Race 1"},
+            {7, "Race 2"}
         }},
         {4, { // Straight Rhythm
             {0, "Waiting"},
@@ -135,9 +178,7 @@ std::string getFriendlySessionStateName(int type, int session) {
             {2, "Round"},
             {3, "Quarter-Finals"},
             {4, "Semi-Finals"},
-            {5, "Final"},
-            {16, "In Progress"},
-            {32, "Completed"}
+            {5, "Final"}
         }}
     };
 
@@ -151,17 +192,36 @@ std::string getFriendlySessionStateName(int type, int session) {
     return "Unknown";
 }
 
+// Helper to convert session state names
+std::string Plugin::getSessionStateDisplayName(int sessionState) {
+    static const std::unordered_map<int, std::string> sessionStateNames = {
+        {0, ""},
+        {16, "In Progress"},
+        {32, "Completed"},
+        {64, "Sighting Lap"},
+        {256, "Pre-Start"},
+        {512, "Race Over"},
+        {1024, "Completed"}
+    };
+
+    // Find the session state in the map
+    auto it = sessionStateNames.find(sessionState);
+    if (it != sessionStateNames.end()) {
+        return it->second;
+    }
+    return "Unknown";
+}
 
 // Helper to convert conditions to a friendly name
-std::string getFriendlyConditionsName(int condition) {
+std::string Plugin::getConditionsDisplayName(int condition) {
     static const std::unordered_map<int, std::string> conditionsMap = {
-        {0, "Sunny"},
+        {0, "Clear"},
         {1, "Cloudy"},
         {2, "Rainy"}
     };
 
     auto it = conditionsMap.find(condition);
-    return it != conditionsMap.end() ? it->second : "Unknown Conditions";
+    return it != conditionsMap.end() ? it->second : "Unknown";
 }
 
 // Helper to convert IP or port to a human-readable format
@@ -181,7 +241,7 @@ std::string convertRawData(const std::string& rawData) {
     return "";
 }
 
-// Helper function to get custom data
+// Helper to get custom data
 std::string Plugin::getCustomData(const std::string& keyOffset, const std::string& keySize, const std::string& label) {
     // Fetch offsets and sizes
     uintptr_t offset = std::stoul(configManager_.getValue(keyOffset), nullptr, 16);
@@ -210,8 +270,8 @@ std::string Plugin::getCustomData(const std::string& keyOffset, const std::strin
     return "";
 }
 
-// Mapping
-const std::vector<std::pair<std::string, std::string>> Plugin::friendlyNames_ = {
+// Maps config keys to display names
+const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDisplayNameMap = {
     {"rider_name", "Rider Name"},
     {"category", "Category"},
     {"bike_id", "Bike ID"},
@@ -224,128 +284,97 @@ const std::vector<std::pair<std::string, std::string>> Plugin::friendlyNames_ = 
     {"server_name", "Server Name"},
     {"server_password", "Server Password"},
     {"event_type", "Event Type"},
+    {"session", "Session"},
     {"session_state", "Session State"},
     {"conditions", "Conditions"},
     {"air_temperature", "Air Temperature"}
 };
 
-
-// Helper function to process draw fields
-void Plugin::updateDrawFields(const std::unordered_map<std::string, std::string>& fields) {
-    std::ostringstream logStream;
-
-    logStream << "Selected Data:\n";
-
-    std::vector<std::string> tempDisplayStrings;
-
-    if (configManager_.getValue("plugin_banner") == "true") {
-        tempDisplayStrings.emplace_back(PLUGIN_VERSION); // truncate string
-    }
-
-    for (const auto& [configKey, friendlyName] : friendlyNames_) {
-        auto it = fields.find(friendlyName);
-        if (it != fields.end()) {
-            const std::string& fieldValue = it->second;
-
-            // Check the config to see if this field should be logged/drawn
-            if (configManager_.getValue(configKey) == "true") {
-                logStream << friendlyName << ": " << fieldValue << "\n";
-                tempDisplayStrings.emplace_back(friendlyName + ": " + fieldValue.substr(0, 32)); // truncate string
-            }
-        }
-    }
-
-    // Update the display strings
-    {
-        std::lock_guard<std::mutex> guard(displayMutex_);
-        displayStrings_ = tempDisplayStrings;
-    }
-}
-
 void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
-    Logger::getInstance().log("EventInit handler triggered");
+    Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    // Store EventInit data
-    riderName_ = eventData.m_szRiderName;
-    bikeID_ = eventData.m_szBikeID;
-    bikeName_ = eventData.m_szBikeName;
-    category_ = eventData.m_szCategory;
-    trackID_ = eventData.m_szTrackID;
-    trackName_ = eventData.m_szTrackName;
-    trackLength_ = eventData.m_fTrackLength;
     type_ = eventData.m_iType;
-
-    // Get Necessary custom data to determine connection state
+    // we cant rely on type alone since it may be 1 (Testing) for Open Practice
     localServerName_ = getCustomData("local_server_name_offset", "local_server_name_size", "local_server_name");
     remoteServerIP_ = getCustomData("remote_server_ip_offset", "remote_server_ip_size", "remote_server_ip");
 
-    // Get the rest of the custom data
-    if (!localServerName_.empty()) { // is host
-        connectionType_ = "Host";
+    if (!localServerName_.empty()) { // Host
         serverName_ = localServerName_;
+        connectionType_ = "Host";
         serverPassword_ = getCustomData("local_server_password_offset", "local_server_password_size", "local_server_password");
     }
-    else if (remoteServerIP_ != "0.0.0.0") { // is online
-        connectionType_ = "Client";
-        serverPassword_ = getCustomData("remote_server_password_offset", "remote_server_password_size", "remote_server_password");
+    else if (remoteServerIP_ != "0.0.0.0") { // Client
         remoteServerPort_ = getCustomData("remote_server_port_offset", "remote_server_port_size", "remote_server_port");
+        serverPassword_ = getCustomData("remote_server_password_offset", "remote_server_password_size", "remote_server_password");
+        connectionType_ = "Client";
 
-        // Only prepare- and perform search if Server Name is enabled
+        // Conditionally prepare- and perform server_name search
         if (configManager_.getValue("server_name") == "true") {
             // Search for server name
             std::string searchPattern(reinterpret_cast<char*>(rawRemoteServer_.data()), rawRemoteServer_.size());
 
             // Get remote server name size and offset from configuration
             size_t remoteServerNameSize = std::stoul(configManager_.getValue("remote_server_name_size"));
-            size_t remoteServerNameOffset = std::stoul(configManager_.getValue("remote_server_name_offset"));
+            uintptr_t remoteServerNameOffset = std::stoul(configManager_.getValue("remote_server_name_offset"), nullptr, 16);
 
             serverName_ = memReader_.searchMemory(searchPattern, remoteServerNameSize, remoteServerNameOffset);
         }
-
     }
     else {
         connectionType_ = "Offline";
-        serverName_ = "Testing";
     }
+
+    // Update the data keys
+    std::unordered_map<std::string, std::string> dataKeys = {
+        {"rider_name", eventData.m_szRiderName},
+        {"category", eventData.m_szCategory},
+        {"bike_id", eventData.m_szBikeID},
+        {"bike_name", eventData.m_szBikeName},
+        {"track_id", eventData.m_szTrackID},
+        {"track_name", eventData.m_szTrackName},
+        {"track_length", std::to_string(static_cast<int>(std::round(eventData.m_fTrackLength))) + " m"},
+        {"server_name", serverName_},
+        {"server_password", serverPassword_},
+        {"connection", connectionType_},
+        {"event_type", getEventTypeDisplayName(eventData.m_iType, connectionType_)}
+    };
+
+    setDataKeysToDisplay(dataKeys);
 }
-
-
 
 // RunInit
 void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
-    Logger::getInstance().log("RunInit handler triggered");
+    Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    // Populate fields with friendly names as keys
-    std::unordered_map<std::string, std::string> drawFields = {
-        {"Rider Name", riderName_},
-        {"Category", category_},
-        {"Bike ID", bikeID_},
-        {"Bike Name", bikeName_},
-        {"Setup", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default"},
-        {"Track ID", trackID_},
-        {"Track Name", trackName_},
-        {"Track Length", std::to_string(static_cast<int>(std::round(trackLength_))) + " m"},
-        {"Connection", connectionType_},
-        {"Event Type", getFriendlyEventTypeName(type_)},
-        {"Session State", getFriendlySessionStateName(type_, sessionData.m_iSession)},
-        {"Conditions", getFriendlyConditionsName(sessionData.m_iConditions)},
-        {"Air Temperature", std::to_string(static_cast<int>(std::round(sessionData.m_fAirTemperature))) + "°C"}
+    std::unordered_map<std::string, std::string> dataKeys = {
+        {"setup", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default"},
+        {"session", getSessionDisplayName(type_, sessionData.m_iSession)},
+        {"conditions", getConditionsDisplayName(sessionData.m_iConditions)},
+        {"air_temperature", std::to_string(static_cast<int>(std::round(sessionData.m_fAirTemperature))) + "°C"}
     };
 
-    if (connectionType_ != "Offline") {
-        drawFields["Server Name"] = serverName_;
-        if (!serverPassword_.empty()) {
-            drawFields["Server Password"] = serverPassword_;
-        }
-    }
+    setDataKeysToDisplay(dataKeys);
+}
 
-    // Process fields
-    updateDrawFields(drawFields);
+// RaceSession
+void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
+    Logger::getInstance().log(std::string(__func__) + " handler triggered");
+
+    setDataKeysToDisplay({ {"session_state", getSessionStateDisplayName(raceSession.m_iSessionState)} });
+}
+
+// RaceSessionState
+void Plugin::onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState) {
+    Logger::getInstance().log(std::string(__func__) + " handler triggered");
+
+    setDataKeysToDisplay({ {"session_state", getSessionStateDisplayName(raceSessionState.m_iSessionState)} });
 }
 
 // EventDeinit
 void Plugin::onEventDeinit() {
-    Logger::getInstance().log("Plugin handling EventDeinit");
+    Logger::getInstance().log(std::string(__func__) + " handler triggered");
+
+    // clear data keys
     localServerName_.clear();
     remoteServerIP_.clear();
     remoteServerPort_.clear();
@@ -354,9 +383,6 @@ void Plugin::onEventDeinit() {
     serverPassword_.clear();
     connectionType_.clear();
 
-    // Clear the display strings as well
-    {
-        std::lock_guard<std::mutex> guard(displayMutex_);
-        displayStrings_.clear();
-    }
+    // Clear the display keys as well
+    dataKeysToDisplay_.clear();
 }

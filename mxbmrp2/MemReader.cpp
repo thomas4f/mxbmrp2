@@ -11,9 +11,6 @@
 #include <cctype>
 #include <vector>
 
-// Minimum valid length for a server name
-constexpr size_t MIN_VALID_LENGTH = 4;
-
 // Singleton Instance
 MemReader& MemReader::getInstance() {
     static MemReader instance;
@@ -26,7 +23,7 @@ MemReader::MemReader() : baseAddress_(0) {}
 // Destructor
 MemReader::~MemReader() = default;
 
-// Utility function to convert an integer to a hexadecimal string
+// Helper function to convert an integer to a hexadecimal string
 std::string addressToHex(uintptr_t address) {
     std::ostringstream oss;
     oss << "0x" << std::hex << std::uppercase << address;
@@ -58,52 +55,40 @@ std::string stringToHex(const std::string& input) {
 
 // Helper function to validate server name
 bool isValid(const std::string& str) {
-    if (str.length() < MIN_VALID_LENGTH) {
-        return false; // Server name too short
-    }
-
-    bool hasPrintable = false;
+    // Check each character in the string
     for (char c : str) {
-        if (c == '\0') {
-            break;
+        if (c != '\0' && (static_cast<unsigned char>(c) < 32 || static_cast<unsigned char>(c) > 125)) {
+            return false; // Contains invalid ASCII characters
         }
-        if (static_cast<unsigned char>(c) < 32 || static_cast<unsigned char>(c) > 127) {
-            return false; // Contains non-printable ASCII characters
-        }
-        hasPrintable = true;
     }
-    return hasPrintable;
-}
 
+    // Ensure there's at least one non-null character
+    return std::any_of(str.begin(), str.end(), [](char c) { return c != '\0'; });
+}
 
 // Read a string at a specific memory offset
 std::string MemReader::readStringAtOffset(uintptr_t offset, size_t size, const std::string& label) {
     if (baseAddress_ == 0) {
         Logger::getInstance().log("Base address is not initialized");
-        return "Uknown";
-    }
-
-    Logger::getInstance().log("Looking up " + label + " at offset " + addressToHex(offset));
-
-
-    uintptr_t targetAddress = baseAddress_ + offset;
-    std::vector<char> buffer(size, 0);
-    SIZE_T bytesRead = 0;
-
-    if (ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<LPCVOID>(targetAddress), buffer.data(), size, &bytesRead)) {
-        return std::string(buffer.data(), bytesRead); // Return the string including all bytes read
-    }
-    else {
-        Logger::getInstance().log("Failed to read " + label);
         return "Unknown";
     }
+
+    Logger::getInstance().log("Looking up " + label + " at offset " + addressToHex(offset) + ": ", false);
+
+    uintptr_t targetAddress = baseAddress_ + offset;
+    char* src = reinterpret_cast<char*>(targetAddress);
+    std::string result(src, size);
+
+    Logger::getInstance().log(stringToHex(result));
+    return result;
 }
 
-// Searches process memory for a string
+
+// Searches process memory for a string (server name, specifically)
 std::string MemReader::searchMemory(const std::string& searchString, size_t size, size_t offset) {
     if (baseAddress_ == 0) {
         Logger::getInstance().log("Base address is not initialized");
-        return "Uknown";
+        return "Unknown";
     }
 
     SYSTEM_INFO sysInfo;

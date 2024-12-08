@@ -12,7 +12,7 @@ public:
     static Logger& getInstance();
 
     // Logs a message to the log file
-    void log(const std::string& message);
+    void log(const std::string& message, bool newline = true);
 
     // Clear the log file
     void truncate();

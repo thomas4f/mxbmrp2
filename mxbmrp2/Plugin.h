@@ -1,4 +1,3 @@
-
 // Plugin.h
 
 #pragma once
@@ -15,25 +14,27 @@ public:
     void initialize();
     void shutdown();
 
+    // MXB Interface
     void onEventInit(const SPluginsBikeEvent_t& eventData);
     void onEventDeinit();
     void onRunInit(const SPluginsBikeSession_t& sessionData);
+    void onRaceSession(const SPluginsRaceSession_t& raceSession);
+    void onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState);
 
-    // Method to retrieve the display strings
-    std::vector<std::string> getDisplayStrings();
+    // Method to retrieve the keys to display
+    std::vector<std::string> getDisplayKeys();
 
     // Cached configuration values for Draw
-    struct DrawConfig {
+    struct displayConfig {
         std::string fontName;
         float fontSize;
+        float lineHeight;
         unsigned long fontColor;
         unsigned long backgroundColor;
         float positionX;
         float positionY;
         float quadWidth;
-        unsigned long quadColor;
-        // Add more as needed
-    } drawConfig_;
+    } displayConfig_;
 
 private:
     Plugin();
@@ -46,23 +47,26 @@ private:
     ConfigManager& configManager_;
     MemReader& memReader_;
 
+    // Mutex for thread-safe operations
+    std::mutex mutex_;
+
+    // Wrapper for getting custom data with memreader
     std::string getCustomData(const std::string& keyOffset, const std::string& keySize, const std::string& label);
-    void updateDrawFields(const std::unordered_map<std::string, std::string>& fields);
+
+    // Helper to process and update draw fields
+    void setDataKeysToDisplay(const std::unordered_map<std::string, std::string>& fields);
 
     // Method to load Draw-related config values
-    void loadDrawConfig();
+    void setDisplayConfig();
 
-    // EventInit data members
-    std::string riderName_ = "";
-    std::string bikeID_ = "";
-    std::string bikeName_ = "";
-    std::string category_ = "";
-    std::string trackID_ = "";
-    std::string trackName_ = "";
-    float trackLength_ = 0.0f;
+    // Display name helpers
+    std::string getEventTypeDisplayName(int type, const std::string& connectionType);
+    std::string getSessionDisplayName(int type, int session);
+    std::string getSessionStateDisplayName(int sessionState);
+    std::string getConditionsDisplayName(int condition);
+
+    // Custom data keys
     int type_ = 0;
-
-    // Custom data members
     std::string serverName_ = "";
     std::string serverPassword_ = "";
     std::string localServerName_ = "";
@@ -73,10 +77,12 @@ private:
 
     std::vector<unsigned char> rawRemoteServer_;
 
-    // Display strings
-    std::vector<std::string> displayStrings_;
-    std::mutex displayMutex_; // Mutex to protect displayStrings_
+    // Stores all key-value pairs of data for processing and display.
+    std::unordered_map<std::string, std::string> allDataKeys_;
 
-    // Mapping between config keys and friendly names
-    static const std::vector<std::pair<std::string, std::string>> friendlyNames_;
+    // Maps internal configuration keys to user-friendly display names.
+    static const std::vector<std::pair<std::string, std::string>> configKeyToDisplayNameMap;
+
+    // Holds the final set of data intended for display in the plugin's user interface
+    std::vector<std::string> dataKeysToDisplay_;
 };

@@ -33,10 +33,13 @@ void Logger::openLogFile() {
 }
 
 // Logs a message to the log file
-void Logger::log(const std::string& message) {
+void Logger::log(const std::string& message, bool newline) {
     std::lock_guard<std::mutex> guard(mutex_);
     if (logFile_.is_open()) {
-        logFile_ << message << std::endl;
+        logFile_ << message;
+        if (newline) {
+            logFile_ << std::endl;
+        }
     }
 }
 

@@ -10,6 +10,8 @@
 
 // Definition of defaultValues_
 const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_ = {
+    // Draw defaults are in Plugin.cpp
+
     // Memory configuration
     {"local_server_name_offset", "0x9CA748"},
     {"local_server_name_size", "64"},
@@ -21,7 +23,7 @@ const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_
     {"remote_server_port_size", "2"},
     {"remote_server_password_offset", "0x9B1E04"},
     {"remote_server_password_size", "32"},
-    {"remote_server_name_offset", "25"},
+    {"remote_server_name_offset", "0x2C"},
     {"remote_server_name_size", "64"},
 
     // Draw configuration
@@ -38,6 +40,7 @@ const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_
     {"server_name", "true"},
     {"server_password", "true"},
     {"event_type", "true"},
+    {"session", "true"},
     {"session_state", "false"},
     {"conditions", "false"},
     {"air_temperature", "false"}
