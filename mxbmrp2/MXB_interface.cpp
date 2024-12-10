@@ -229,3 +229,20 @@ __declspec(dllexport) void RaceSessionState(void* _pData, int _iDataSize) {
     SPluginsRaceSessionState_t* psRaceSessionState = static_cast<SPluginsRaceSessionState_t*>(_pData);
     Plugin::getInstance().onRaceSessionState(*psRaceSessionState);
 }
+
+// RaceAddEntry: Called when a new entry is added to the race
+__declspec(dllexport) void RaceAddEntry(void* _pData, int _iDataSize) {
+    if (_pData == nullptr) {
+        Logger::getInstance().log("RaceAddEntry received null data");
+        return;
+    }
+
+    if (_iDataSize < sizeof(SPluginsRaceAddEntry_t)) {
+        Logger::getInstance().log("RaceAddEntry received insufficient data size");
+        return;
+    }
+
+    // Delegate to Plugin
+    SPluginsRaceAddEntry_t* psRaceAddEntry = static_cast<SPluginsRaceAddEntry_t*>(_pData);
+    Plugin::getInstance().onRaceAddEntry(*psRaceAddEntry);
+}

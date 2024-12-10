@@ -20,6 +20,7 @@ public:
     void onRunInit(const SPluginsBikeSession_t& sessionData);
     void onRaceSession(const SPluginsRaceSession_t& raceSession);
     void onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState);
+    void onRaceAddEntry(const SPluginsRaceAddEntry_t& raceAddEntry);
 
     // Method to retrieve the keys to display
     std::vector<std::string> getDisplayKeys();
@@ -54,7 +55,7 @@ private:
     std::string getCustomData(const std::string& keyOffset, const std::string& keySize, const std::string& label);
 
     // Helper to process and update draw fields
-    void setDataKeysToDisplay(const std::unordered_map<std::string, std::string>& fields);
+    void updateDataKeys(const std::unordered_map<std::string, std::string>& fields);
 
     // Method to load Draw-related config values
     void setDisplayConfig();
@@ -67,6 +68,7 @@ private:
 
     // Custom data keys
     int type_ = 0;
+    std::string riderNumName_ = "";
     std::string serverName_ = "";
     std::string serverPassword_ = "";
     std::string localServerName_ = "";

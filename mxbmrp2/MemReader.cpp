@@ -23,7 +23,7 @@ MemReader::MemReader() : baseAddress_(0) {}
 // Destructor
 MemReader::~MemReader() = default;
 
-// Helper function to convert an integer to a hexadecimal string
+// Helper to convert an integer to a hexadecimal string
 std::string addressToHex(uintptr_t address) {
     std::ostringstream oss;
     oss << "0x" << std::hex << std::uppercase << address;
@@ -43,7 +43,7 @@ void MemReader::initialize() {
     Logger::getInstance().log("MemReader initialized with base address: " + addressToHex(baseAddress_));
 }
 
-// Utility function to convert a string to its hexadecimal representation
+// Helper to convert a string to its hexadecimal representation
 std::string stringToHex(const std::string& input) {
     std::ostringstream hexStream;
     hexStream << std::hex << std::setfill('0');
@@ -53,12 +53,12 @@ std::string stringToHex(const std::string& input) {
     return hexStream.str();
 }
 
-// Helper function to validate server name
+// Helper to validate server name
 bool isValid(const std::string& str) {
-    // Check each character in the string
+    // Check that string only contains valid ASCII characters
     for (char c : str) {
         if (c != '\0' && (static_cast<unsigned char>(c) < 32 || static_cast<unsigned char>(c) > 125)) {
-            return false; // Contains invalid ASCII characters
+            return false;
         }
     }
 
@@ -84,7 +84,7 @@ std::string MemReader::readStringAtOffset(uintptr_t offset, size_t size, const s
 }
 
 
-// Searches process memory for a string (server name, specifically)
+// Searches process memory for a string (server name, specifically) and reads data at offset
 std::string MemReader::searchMemory(const std::string& searchString, size_t size, size_t offset) {
     if (baseAddress_ == 0) {
         Logger::getInstance().log("Base address is not initialized");

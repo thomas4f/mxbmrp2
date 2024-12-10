@@ -44,8 +44,7 @@ extern "C" {
     } SPluginQuad_t;
 
     // Draw
-    typedef struct
-    {
+    typedef struct {
         char m_szString[100];
         float m_afPos[2];
         int m_iFont;
@@ -53,9 +52,7 @@ extern "C" {
         int m_iJustify;
         unsigned long m_ulColor;
     } SPluginString_t;
-   
-    // NEW
-    
+ 
     // RaceEvent
     typedef struct {
         int m_iType;
@@ -67,22 +64,33 @@ extern "C" {
     // RaceSession
     typedef struct
     {
-        int m_iSession;										/* testing: 0 = waiting; 1 = in progress. Race: 0 = waiting; 1 = practice; 2 = qualify; 3 = warmup; 4 = race */
-        int m_iSessionState;								/* testing / waiting: always 0. practice / qualify / warmup: 16 = in progress; 32 = completed. race: 16 = in progress; 64 = sighting lap; 128 = warmup lap; 256 = pre-start; 512 = race over; 1024 = completed */
-        int m_iSessionLength;								/* milliseconds. 0 = no limit */
+        int m_iSession;
+        int m_iSessionState;
+        int m_iSessionLength;
         int m_iSessionNumLaps;
-        int m_iConditions;									/* 0 = sunny; 1 = cloudy; 2 = rainy */
-        float m_fAirTemperature;							/* degrees Celsius */
+        int m_iConditions;
+        float m_fAirTemperature;
     } SPluginsRaceSession_t;
 
     // RaceSessionState
-    typedef struct
-    {
-        int m_iSession;										/* testing: 0 = waiting; 1 = in progress. Race: 0 = waiting; 1 = practice; 2 = qualify; 3 = warmup; 4 = race */
-        int m_iSessionState;								/* testing / waiting: always 0. practice / qualify / warmup: 16 = in progress; 32 = completed. race: 16 = in progress; 64 = sighting lap; 128 = warmup lap; 256 = pre-start; 512 = race over; 1024 = completed */
-        int m_iSessionLength;								/* milliseconds. 0 = no limit */
+    typedef struct {
+        int m_iSession;
+        int m_iSessionState;
+        int m_iSessionLength;
     } SPluginsRaceSessionState_t;
     
+    // RaceAddEntry
+    typedef struct {
+        int m_iRaceNum;
+        char m_szName[100];
+        char m_szBikeName[100];
+        char m_szBikeShortName[100];
+        char m_szCategory[100];
+        int m_iUnactive;
+        int m_iNumberOfGears;
+        int m_iMaxRPM;
+    } SPluginsRaceAddEntry_t;
+
     // Functions exported to the game
     __declspec(dllexport) const char* GetModID();
     __declspec(dllexport) int GetModDataVersion();
@@ -94,9 +102,7 @@ extern "C" {
     __declspec(dllexport) int DrawInit(int* _piNumSprites, char** _pszSpriteName, int* _piNumFonts, char** _pszFontName);
     __declspec(dllexport) void Draw(int _iState, int* _piNumQuads, void** _ppQuad, int* _piNumString, void** _ppString);
     __declspec(dllexport) void RunInit(void* _pData, int _iDataSize);
-    __declspec(dllexport) void RunDeinit();
-
-    // New
     __declspec(dllexport) void RaceSession(void* _pData, int _iDataSize);
     __declspec(dllexport) void RaceSessionState(void* _pData, int _iDataSize);
+    __declspec(dllexport) void RaceAddEntry(void* _pData, int _iDataSize);
 }

@@ -10,7 +10,7 @@
 
 // Definition of defaultValues_
 const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_ = {
-    // Draw defaults are in Plugin.cpp
+    // Note: Display defaults are in Plugin::setDisplayConfig()
 
     // Memory configuration
     {"local_server_name_offset", "0x9CA748"},
@@ -23,11 +23,12 @@ const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_
     {"remote_server_port_size", "2"},
     {"remote_server_password_offset", "0x9B1E04"},
     {"remote_server_password_size", "32"},
-    {"remote_server_name_offset", "0x2C"},
+    {"remote_server_name_offset", "0x19"},
     {"remote_server_name_size", "64"},
 
     // Draw configuration
     {"plugin_banner", "true"},
+    {"rider_number", "true"},
     {"rider_name", "true"},
     {"category", "false"},
     {"bike_id", "false"},
@@ -38,9 +39,9 @@ const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_
     {"track_length", "false"},
     {"connection", "true"},
     {"server_name", "true"},
-    {"server_password", "true"},
+    {"server_password", "false"},
     {"event_type", "true"},
-    {"session", "true"},
+    {"session", "false"},
     {"session_state", "false"},
     {"conditions", "false"},
     {"air_temperature", "false"}
@@ -64,10 +65,7 @@ void ConfigManager::loadConfig(const std::string& filePath) {
     config_.clear();
 
     std::ifstream configFile(filePath);
-    if (!configFile.is_open()) {
-        Logger::getInstance().log("Failed to open config file: " + filePath + ", using defaults");
-    }
-    else {
+    if (configFile.is_open()) {
         Logger::getInstance().log("Loading config file: " + filePath);
         std::string line;
         while (std::getline(configFile, line)) {

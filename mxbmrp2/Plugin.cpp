@@ -16,7 +16,7 @@
 
 // Constants
 constexpr size_t MAX_STRING_LENGTH = 32;
-constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.1";
+constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.2";
 constexpr const char* DATA_DIR = "mxbmrp2_data\\";
 constexpr const char* LOG_FILE = "mxbmrp2.log";
 constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
@@ -85,25 +85,24 @@ void Plugin::setDisplayConfig() {
         Logger::getInstance().log("Falling back to default Draw configuration values");
 
         // Define default values inline
-        displayConfig_.fontSize = 0.025f;
-        displayConfig_.fontColor = 0xFF0081CC;
+        displayConfig_.fontSize = 0.02f;
+        displayConfig_.fontColor = 0xFFFFFFFF;
         displayConfig_.backgroundColor = 0x7F000000;
         displayConfig_.positionX = 0.0f;
         displayConfig_.positionY = 0.0f;
     }
 }
 
-// setDataKeysToDisplay
-void Plugin::setDataKeysToDisplay(const std::unordered_map<std::string, std::string>& dataKeys) {
+// updateDataKeys
+void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& dataKeys) {
     Logger::getInstance().log("Updating data keys");
 
     std::lock_guard<std::mutex> guard(mutex_); // Lock for both allDataKeys_ and dataKeysToDisplay_
 
-    // Update or add new keys
+    // Conditionally update or add new keys
     for (const auto& [key, value] : dataKeys) {
         if (configManager_.getValue(key) == "true") {
-            Logger::getInstance().log(key.substr(0, MAX_STRING_LENGTH));
-            allDataKeys_[key] = value;
+            allDataKeys_[key] = value.substr(0, MAX_STRING_LENGTH);
         }
     }
 
@@ -153,7 +152,6 @@ std::string Plugin::getEventTypeDisplayName(int type, const std::string& connect
     auto it = eventTypeNames.find(type);
     return it != eventTypeNames.end() ? it->second : "Unknown";
 }
-
 
 // Helper to convert session names
 std::string Plugin::getSessionDisplayName(int type, int session) {
@@ -270,7 +268,7 @@ std::string Plugin::getCustomData(const std::string& keyOffset, const std::strin
     return "";
 }
 
-// Maps config keys to display names
+// Maps config keys to display names and sets display order
 const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDisplayNameMap = {
     {"rider_name", "Rider Name"},
     {"category", "Category"},
@@ -290,6 +288,7 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
     {"air_temperature", "Air Temperature"}
 };
 
+// EventInit
 void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
@@ -324,7 +323,6 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         connectionType_ = "Offline";
     }
 
-    // Update the data keys
     std::unordered_map<std::string, std::string> dataKeys = {
         {"rider_name", eventData.m_szRiderName},
         {"category", eventData.m_szCategory},
@@ -339,7 +337,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         {"event_type", getEventTypeDisplayName(eventData.m_iType, connectionType_)}
     };
 
-    setDataKeysToDisplay(dataKeys);
+    updateDataKeys(dataKeys);
 }
 
 // RunInit
@@ -353,28 +351,46 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
         {"air_temperature", std::to_string(static_cast<int>(std::round(sessionData.m_fAirTemperature))) + "°C"}
     };
 
-    setDataKeysToDisplay(dataKeys);
+    updateDataKeys(dataKeys);
 }
 
 // RaceSession
 void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    setDataKeysToDisplay({ {"session_state", getSessionStateDisplayName(raceSession.m_iSessionState)} });
+    updateDataKeys({ {"session_state", getSessionStateDisplayName(raceSession.m_iSessionState)} });
 }
 
 // RaceSessionState
 void Plugin::onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    setDataKeysToDisplay({ {"session_state", getSessionStateDisplayName(raceSessionState.m_iSessionState)} });
+    updateDataKeys({ {"session_state", getSessionStateDisplayName(raceSessionState.m_iSessionState)} });
+}
+
+// RaceAddEntry
+void Plugin::onRaceAddEntry(const SPluginsRaceAddEntry_t& raceAddEntry) {
+    Logger::getInstance().log(std::string(__func__) + " handler triggered");
+
+    // Conditionally prepend number to rider name
+    if (configManager_.getValue("rider_number") == "true") {
+
+        // Check whether the entry is in fact the local player
+        if (riderNumName_.empty() &&
+            raceAddEntry.m_szName == allDataKeys_["rider_name"] &&
+            raceAddEntry.m_szBikeName == allDataKeys_["bike_name"]) {
+
+            updateDataKeys({ {"rider_name", std::to_string(raceAddEntry.m_iRaceNum) + " " + allDataKeys_["rider_name"]} });
+        }
+    }
 }
 
 // EventDeinit
 void Plugin::onEventDeinit() {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    // clear data keys
+    // clear custom data keys
+    riderNumName_.clear();
     localServerName_.clear();
     remoteServerIP_.clear();
     remoteServerPort_.clear();
@@ -384,5 +400,6 @@ void Plugin::onEventDeinit() {
     connectionType_.clear();
 
     // Clear the display keys as well
+    allDataKeys_.clear();
     dataKeysToDisplay_.clear();
 }
