@@ -1,3 +1,4 @@
+
 // Plugin.cpp
 
 #include "pch.h"
@@ -5,6 +6,7 @@
 #include "Logger.h"
 #include "ConfigManager.h"
 #include "MemReader.h"
+#include "KeyPressHandler.h"
 
 #include <sstream>
 #include <iomanip>
@@ -16,10 +18,11 @@
 
 // Constants
 constexpr size_t MAX_STRING_LENGTH = 32;
-constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.2";
+constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.3";
 constexpr const char* DATA_DIR = "mxbmrp2_data\\";
 constexpr const char* LOG_FILE = "mxbmrp2.log";
 constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
+static constexpr UINT HOTKEY = 'R';
 
 // Singleton instance
 Plugin& Plugin::getInstance() {
@@ -52,6 +55,10 @@ void Plugin::initialize() {
 
     // Now that ConfigManager is loaded, load Draw configuration
     setDisplayConfig();
+
+    // Initialize KeyPressHandler with the toggleDisplay callback
+    keyPressHandler_ = std::make_unique<KeyPressHandler>([this]() { this->toggleDisplay(); }, HOTKEY);
+    Logger::getInstance().log("KeyPressHandler initialized with hotkey CTRL + " + std::string(1, static_cast<char>(HOTKEY)));
 }
 
 // Shutdown the plugin
@@ -97,36 +104,46 @@ void Plugin::setDisplayConfig() {
 void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& dataKeys) {
     Logger::getInstance().log("Updating data keys");
 
-    std::lock_guard<std::mutex> guard(mutex_); // Lock for both allDataKeys_ and dataKeysToDisplay_
+    std::lock_guard<std::mutex> guard(mutex_);
 
-    // Conditionally update or add new keys
+    // Update or add keys from the input map to allDataKeys_
     for (const auto& [key, value] : dataKeys) {
-        if (configManager_.getValue(key) == "true") {
-            allDataKeys_[key] = value.substr(0, MAX_STRING_LENGTH);
-        }
+        allDataKeys_[key] = value;
     }
 
-    // Debug log: Output all data keys and their values
-    // for (const auto& [key, value] : allDataKeys_) {
-    //    Logger::getInstance().log("  " + key + ": " + value);
-    //}
+    // Prepare a temporary buffer for data keys to be displayed
+    std::vector<std::string> displayKeysBuffer;
 
-    std::vector<std::string> tempDataKeysToDisplay_;
+    // Inline utility to check if a config key is enabled
+    auto isEnabled = [this](const std::string& cfgKey) {
+        return configManager_.getValue(cfgKey) == "true";
+    };
 
-    // Conditionally add plugin banner
-    if (configManager_.getValue("plugin_banner") == "true") {
-        tempDataKeysToDisplay_.emplace_back(PLUGIN_VERSION);
-    }
-
-    // Update keys to display
+    // Update keys to display based on configuration and availability
     for (const auto& [configKey, displayName] : configKeyToDisplayNameMap) {
-        auto it = allDataKeys_.find(configKey);
-        if (it != allDataKeys_.end() && !it->second.empty()) {
-            tempDataKeysToDisplay_.emplace_back(displayName + ": " + it->second.substr(0, MAX_STRING_LENGTH));
+        if (isEnabled(configKey)) {
+            const auto& value = allDataKeys_[configKey];
+            if (!value.empty()) {
+
+                std::string displayString;
+
+                // Special cases
+                if (configKey == "plugin_banner") {
+                    displayString = value;
+                } else if (configKey == "rider_name" && isEnabled("race_number") && !allDataKeys_["race_number"].empty()) {
+                    displayString = displayName + ": " + allDataKeys_["race_number"] + " " + value;
+                }
+                else { // Everything else
+                    displayString = displayName + ": " + value;
+                }
+
+                displayKeysBuffer.emplace_back(displayString.substr(0, MAX_STRING_LENGTH));
+            }
         }
     }
 
-    dataKeysToDisplay_ = std::move(tempDataKeysToDisplay_); // Atomic update
+    // Atomically update the class member with the new display keys
+    dataKeysToDisplay_ = std::move(displayKeysBuffer);
 }
 
 // Public getter for keys to display
@@ -270,6 +287,7 @@ std::string Plugin::getCustomData(const std::string& keyOffset, const std::strin
 
 // Maps config keys to display names and sets display order
 const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDisplayNameMap = {
+    {"plugin_banner", "Plugin Banner"},
     {"rider_name", "Rider Name"},
     {"category", "Category"},
     {"bike_id", "Bike ID"},
@@ -307,23 +325,21 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         serverPassword_ = getCustomData("remote_server_password_offset", "remote_server_password_size", "remote_server_password");
         connectionType_ = "Client";
 
-        // Conditionally prepare- and perform server_name search
-        if (configManager_.getValue("server_name") == "true") {
-            // Search for server name
-            std::string searchPattern(reinterpret_cast<char*>(rawRemoteServer_.data()), rawRemoteServer_.size());
+        // Search for server name
+        std::string searchPattern(reinterpret_cast<char*>(rawRemoteServer_.data()), rawRemoteServer_.size());
 
-            // Get remote server name size and offset from configuration
-            size_t remoteServerNameSize = std::stoul(configManager_.getValue("remote_server_name_size"));
-            uintptr_t remoteServerNameOffset = std::stoul(configManager_.getValue("remote_server_name_offset"), nullptr, 16);
+        // Get remote server name size and offset from configuration
+        size_t remoteServerNameSize = std::stoul(configManager_.getValue("remote_server_name_size"));
+        uintptr_t remoteServerNameOffset = std::stoul(configManager_.getValue("remote_server_name_offset"), nullptr, 16);
 
-            serverName_ = memReader_.searchMemory(searchPattern, remoteServerNameSize, remoteServerNameOffset);
-        }
-    }
-    else {
+        serverName_ = memReader_.searchMemory(searchPattern, remoteServerNameSize, remoteServerNameOffset);
+
+    } else {
         connectionType_ = "Offline";
     }
 
     std::unordered_map<std::string, std::string> dataKeys = {
+        {"plugin_banner", PLUGIN_VERSION},
         {"rider_name", eventData.m_szRiderName},
         {"category", eventData.m_szCategory},
         {"bike_id", eventData.m_szBikeID},
@@ -372,16 +388,9 @@ void Plugin::onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionSta
 void Plugin::onRaceAddEntry(const SPluginsRaceAddEntry_t& raceAddEntry) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    // Conditionally prepend number to rider name
-    if (configManager_.getValue("rider_number") == "true") {
-
-        // Check whether the entry is in fact the local player
-        if (riderNumName_.empty() &&
-            raceAddEntry.m_szName == allDataKeys_["rider_name"] &&
-            raceAddEntry.m_szBikeName == allDataKeys_["bike_name"]) {
-
-            updateDataKeys({ {"rider_name", std::to_string(raceAddEntry.m_iRaceNum) + " " + allDataKeys_["rider_name"]} });
-        }
+    // Check whether the entry is in fact the local player
+    if (raceAddEntry.m_szName == allDataKeys_["rider_name"] && raceAddEntry.m_szBikeName == allDataKeys_["bike_name"]) {
+        updateDataKeys({ {"race_number", std::to_string(raceAddEntry.m_iRaceNum) } });
     }
 }
 
@@ -390,7 +399,6 @@ void Plugin::onEventDeinit() {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
     // clear custom data keys
-    riderNumName_.clear();
     localServerName_.clear();
     remoteServerIP_.clear();
     remoteServerPort_.clear();
@@ -402,4 +410,22 @@ void Plugin::onEventDeinit() {
     // Clear the display keys as well
     allDataKeys_.clear();
     dataKeysToDisplay_.clear();
+}
+
+// Define the callback function
+void Plugin::toggleDisplay() {
+
+    // Toggle display
+    displayEnabled_ = !displayEnabled_;
+        if (!displayEnabled_) {
+            dataKeysToDisplay_.clear();
+            Logger::getInstance().log("Display disabled.");
+        } else {
+            configManager_.loadConfig("plugins\\" + std::string(DATA_DIR) + std::string(CONFIG_FILE));
+            setDisplayConfig();
+
+            // Re-populate displayKeysToDisplay_ based on current allDataKeys_
+            updateDataKeys(allDataKeys_);
+            Logger::getInstance().log("Display enabled.");
+        }
 }

@@ -31,28 +31,43 @@ MX Bikes\
 Optionally edit the `mxbmrp2.ini` configuration file to your liking.
   
 The file contains customizable fields such as:
-| Field               | Description  | Example                           |
-|---------------------|--------------|-----------------------------------|
-| plugin_banner       |              | mxbmrp2 v0.9.1                    |
-| rider_name          |              | Thomas                            |
-| category            |              | MX2 OEM                           |
-| bike_id             |              | MX2OEM_2023_KTM_250_SX-F          |
-| bike_name           |              | KTM 250 SX-F 2023                 |
-| setup               |              | Default                           |
-| track_id            |              | HM_swedish_midsummer_carnage_2    |
-| track_name          |              | HM \| Swedish Midsummer Carnage 2 |
-| track_length        |              | 965 m                             |
-| connection          |              | Host                              |
-| server_name         |              | thomas4f                          |
-| password            |              | verySecret                        |
-| event_type          |              | Race                              |
-| session_state       |              | Warmup                            |
-| conditions          |              | Clear                             |
-| air_temperature     |              | 20°C                              |
+| Field               | Example                           |
+|---------------------|-----------------------------------|
+| plugin_banner       | mxbmrp2 v0.9.3                    |
+| race_number         | _(prefixed to rider_name)_        | 
+| rider_name          | 4 Thomas                          |
+| category            | MX2 OEM                           |
+| bike_id             | MX2OEM_2023_KTM_250_SX-F          |
+| bike_name           | KTM 250 SX-F 2023                 |
+| setup               | Default                           |
+| track_id            | HM_swedish_midsummer_carnage_2    |
+| track_name          | HM \| Swedish Midsummer Carnage 2 |
+| track_length        | 965 m                             |
+| connection          | Host                              |
+| server_name         | thomas4f                          |
+| server_password     | verySecret                        |
+| event_type          | Race                              |
+| session_state       | Warmup                            |
+| conditions          | Clear                             |
+| air_temperature     | 20°C                              |
 
 ## Notes
+### Toggle HUD display
+Press `CTRL+R` to toggle the HUD on or off. This will also reload any changes made to the configuration file.
+
 ### Position of the HUD
-Currently, there’s no intuitive way to adjust the HUD position or colors in-game. To do this, manually edit the values in the configuration file and restart the game.
+Currently, you cannot adjust the HUD position or other settings directly within the game interface. However, you can customize its position by editing the configuration file and toggling the HUD on and off using the `CTRL+R` shortcut.
+
+Here's how to adjust the HUD position:
+ - The HUD position is specified using normalized values between `0.0` and `1.0` for both position values.
+ - `position_x` controls the horizontal placement (from the left)  and `position_y` controls the vertical placement (ftom the top).
+ - To center the HUD (roughly) on the screen, set both `position_x=0.5` and `position_y=0.5` in configuration file.
+ - Setting either value to `1.0` or greater will display the HUD outside the viewable area.
+
+### The Connection Field
+ - `Offline` means you're in testing.
+ - `Client` means you've connected to someone's server.
+ - `Host` means that you are hosting a server.
 
 ### Custom Data Handling
 The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but let me know if you run into issues. 

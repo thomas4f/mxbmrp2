@@ -3,9 +3,11 @@
 #pragma once
 
 #include <mutex>
+#include <memory> 
 #include "MXB_interface.h"
 #include "ConfigManager.h"
 #include "MemReader.h"
+#include "KeyPressHandler.h"
 
 class Plugin {
 public:
@@ -48,6 +50,12 @@ private:
     ConfigManager& configManager_;
     MemReader& memReader_;
 
+    // KeyPressHandler instance
+    std::unique_ptr<KeyPressHandler> keyPressHandler_;
+
+    // Callback function to toggle display
+    void toggleDisplay();
+
     // Mutex for thread-safe operations
     std::mutex mutex_;
 
@@ -68,7 +76,6 @@ private:
 
     // Custom data keys
     int type_ = 0;
-    std::string riderNumName_ = "";
     std::string serverName_ = "";
     std::string serverPassword_ = "";
     std::string localServerName_ = "";
@@ -87,4 +94,7 @@ private:
 
     // Holds the final set of data intended for display in the plugin's user interface
     std::vector<std::string> dataKeysToDisplay_;
+
+    // Display state flag
+    bool displayEnabled_ = true;
 };

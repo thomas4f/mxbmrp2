@@ -28,7 +28,7 @@ const std::unordered_map<std::string, std::string> ConfigManager::defaultValues_
 
     // Draw configuration
     {"plugin_banner", "true"},
-    {"rider_number", "true"},
+    {"race_number", "true"},
     {"rider_name", "true"},
     {"category", "false"},
     {"bike_id", "false"},
