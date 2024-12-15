@@ -12,7 +12,6 @@ class KeyPressHandler {
 public:
     using HotkeyCallback = std::function<void()>;
 
-    // Updated constructor to accept hotkey_vk
     KeyPressHandler(HotkeyCallback callback, UINT hotkey);
     ~KeyPressHandler();
 

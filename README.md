@@ -1,6 +1,6 @@
 # MX Bikes Memory Reader Plugin 2 (MXBMRP2)
 
-A plugin for [MX Bikes](https://mx-bikes.com/) that displays bike, track, server information, and other data directly on the in-game screen.
+A plugin for [MX Bikes](https://mx-bikes.com/) that displays event and server information directly on the in-game screen.
 
 ![mxbmrp2](https://github.com/user-attachments/assets/fad6f978-5035-465e-b6dd-b61eec51aeae)
 
@@ -28,9 +28,9 @@ MX Bikes\
             mxbmrp2.ini
 ```
 
-Optionally edit the `mxbmrp2.ini` configuration file to your liking.
+Optionally, you can customize the `mxbmrp2.ini` configuration file to suit your preferences.
   
-The file contains customizable fields such as:
+Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
 | Field               | Example                           |
 |---------------------|-----------------------------------|
 | plugin_banner       | mxbmrp2 v0.9.3                    |
@@ -51,18 +51,20 @@ The file contains customizable fields such as:
 | conditions          | Clear                             |
 | air_temperature     | 20°C                              |
 
+**Note:** There are additional configurable values available. However, apart from adjusting the HUD position, it's recommended to modify these settings only if you are familiar with their functions to avoid unintended display issues.
+
 ## Notes
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. This will also reload any changes made to the configuration file.
 
 ### Position of the HUD
-Currently, you cannot adjust the HUD position or other settings directly within the game interface. However, you can customize its position by editing the configuration file and toggling the HUD on and off using the `CTRL+R` shortcut.
+You cannot adjust the HUD position or other settings directly within the game interface. However, you can customize its position by editing the configuration file and toggling the HUD on and off using the `CTRL+R` shortcut.
 
 Here's how to adjust the HUD position:
- - The HUD position is specified using normalized values between `0.0` and `1.0` for both position values.
- - `position_x` controls the horizontal placement (from the left)  and `position_y` controls the vertical placement (ftom the top).
- - To center the HUD (roughly) on the screen, set both `position_x=0.5` and `position_y=0.5` in configuration file.
- - Setting either value to `1.0` or greater will display the HUD outside the viewable area.
+ - The HUD position is specified using normalized values between `0.0` and `1.0`.
+ - `position_x` controls the horizontal placement (from the left)  and `position_y` controls the vertical placement (from the top).
+ - To position the HUD (roughly) on the center of the screen, set `position_x=0.5` and `position_y=0.5`.
+ - Setting either value to `1.0` or greater will likely move the HUD outside the viewable area, depending on your screen resolution.
 
 ### The Connection Field
  - `Offline` means you're in testing.
@@ -74,6 +76,6 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
- - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) Designed by Chequered Ink
+  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) Designed by Chequered Ink
  - [MaxHUD](https://forum.mx-bikes.com/index.php?topic=180.0) by HornetMaX for the font conversion.
  - @TokisFFS for early testing.

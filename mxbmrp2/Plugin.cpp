@@ -17,8 +17,8 @@
 #pragma comment(lib, "ws2_32.lib")
 
 // Constants
-constexpr size_t MAX_STRING_LENGTH = 32;
-constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.3";
+constexpr size_t MAX_STRING_LENGTH = 48;
+constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.4";
 constexpr const char* DATA_DIR = "mxbmrp2_data\\";
 constexpr const char* LOG_FILE = "mxbmrp2.log";
 constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
@@ -77,7 +77,7 @@ void Plugin::setDisplayConfig() {
         displayConfig_.backgroundColor = std::stoul(configManager_.getValue("background_color"), nullptr, 16);
         displayConfig_.positionX = std::stof(configManager_.getValue("position_x"));
         displayConfig_.positionY = std::stof(configManager_.getValue("position_y"));
-        displayConfig_.quadWidth = displayConfig_.lineHeight * MAX_STRING_LENGTH / 3; // Close enough
+        displayConfig_.quadWidth = (displayConfig_.fontSize * MAX_STRING_LENGTH) / 4 + (displayConfig_.fontSize / 4);
 
         // Check if the font file exists in the "/plugins/" directory
         std::filesystem::path fontPath = std::filesystem::path("plugins") / displayConfig_.fontName;
@@ -417,15 +417,16 @@ void Plugin::toggleDisplay() {
 
     // Toggle display
     displayEnabled_ = !displayEnabled_;
-        if (!displayEnabled_) {
-            dataKeysToDisplay_.clear();
-            Logger::getInstance().log("Display disabled.");
-        } else {
-            configManager_.loadConfig("plugins\\" + std::string(DATA_DIR) + std::string(CONFIG_FILE));
-            setDisplayConfig();
+    if (!displayEnabled_) {
+        dataKeysToDisplay_.clear();
+        Logger::getInstance().log("Display disabled.");
+    }
+    else {
+        configManager_.loadConfig("plugins\\" + std::string(DATA_DIR) + std::string(CONFIG_FILE));
+        setDisplayConfig();
 
-            // Re-populate displayKeysToDisplay_ based on current allDataKeys_
-            updateDataKeys(allDataKeys_);
-            Logger::getInstance().log("Display enabled.");
-        }
+        // Re-populate displayKeysToDisplay_ based on current allDataKeys_
+        updateDataKeys(allDataKeys_);
+        Logger::getInstance().log("Display enabled.");
+    }
 }
