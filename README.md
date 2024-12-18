@@ -6,7 +6,7 @@ A plugin for [MX Bikes](https://mx-bikes.com/) that displays event and server in
 
 MXBMRP2 leverages the game's plugin system and memory reading to display a customizable HUD in-game. This information can be useful to let people know what bike or server you're on when sharing your screen or streaming, for example.
 
-_This plugin is in early development and may contain bugs or incomplete features. If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page._
+_This plugin is in early development and may contain bugs or incomplete features. If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page. Feature- and/or pull requests are also welcome!_
 
 ## Installation
 
@@ -27,6 +27,13 @@ MX Bikes\
             FontFix_CqMono.fnt
             mxbmrp2.ini
 ```
+
+For additional installation help, see the below video:
+<video src="https://github.com/user-attachments/assets/fb0fd555-4e59-425f-8d01-f7496b2b1cf2" type="video/mp4" width="1280" height="718" controls>
+  [mxbmrp2.mp4](https://github.com/user-attachments/assets/fb0fd555-4e59-425f-8d01-f7496b2b1cf2)
+</video>
+
+## Configuration
 
 Optionally, you can customize the `mxbmrp2.ini` configuration file to suit your preferences.
   
@@ -53,7 +60,6 @@ Below is a brief description of the available fields within the `Draw configurat
 
 **Note:** There are additional configurable values available. However, apart from adjusting the HUD position, it's recommended to modify these settings only if you are familiar with their functions to avoid unintended display issues.
 
-## Notes
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. This will also reload any changes made to the configuration file.
 
@@ -66,6 +72,8 @@ Here's how to adjust the HUD position:
  - To position the HUD (roughly) on the center of the screen, set `position_x=0.5` and `position_y=0.5`.
  - Setting either value to `1.0` or greater will likely move the HUD outside the viewable area, depending on your screen resolution.
 
+## Notes
+
 ### The Connection Field
  - `Offline` means you're in testing.
  - `Client` means you've connected to someone's server.
@@ -76,6 +84,6 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
-  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) Designed by Chequered Ink
+ - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) Designed by Chequered Ink
  - [MaxHUD](https://forum.mx-bikes.com/index.php?topic=180.0) by HornetMaX for the font conversion.
  - @TokisFFS for early testing.

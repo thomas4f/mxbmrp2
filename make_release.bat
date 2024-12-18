@@ -1,7 +1,10 @@
+
+REM make_release.bat
+
 @echo off
 
 REM Define the release name
-set "release=mxbmrp2-v0.9.4"
+set "release=mxbmrp2-v0.9.5"
 
 REM Create the release directories
 mkdir ".\Releases\%release%\mxbmrp2_data" 2>nul

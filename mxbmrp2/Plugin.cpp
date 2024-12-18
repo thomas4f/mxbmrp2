@@ -18,7 +18,7 @@
 
 // Constants
 constexpr size_t MAX_STRING_LENGTH = 48;
-constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.4";
+constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.5";
 constexpr const char* DATA_DIR = "mxbmrp2_data\\";
 constexpr const char* LOG_FILE = "mxbmrp2.log";
 constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
@@ -181,8 +181,8 @@ std::string Plugin::getSessionDisplayName(int type, int session) {
             {0, "Waiting"},
             {1, "Practice"},
             {2, "Pre-Qualify"},
-            {3, "Qualify"},
-            {4, "?"}, // Not used?
+            {3, "?"}, // Not Used?
+            {4, "Qualify"},
             {5, "Warmup"},
             {6, "Race 1"},
             {7, "Race 2"}
@@ -210,7 +210,7 @@ std::string Plugin::getSessionDisplayName(int type, int session) {
 // Helper to convert session state names
 std::string Plugin::getSessionStateDisplayName(int sessionState) {
     static const std::unordered_map<int, std::string> sessionStateNames = {
-        {0, ""},
+        {0, ""}, // Empty in Testing and Open Practice
         {16, "In Progress"},
         {32, "Completed"},
         {64, "Sighting Lap"},
