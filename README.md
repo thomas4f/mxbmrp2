@@ -29,7 +29,7 @@ MX Bikes\
 ```
 
 For additional installation help, see the below video:
-<video src="https://github.com/user-attachments/assets/fb0fd555-4e59-425f-8d01-f7496b2b1cf2" type="video/mp4" width="1280" height="718" controls>
+<video src="https://github.com/user-attachments/assets/fb0fd555-4e59-425f-8d01-f7496b2b1cf2" type="video/mp4" width="1280" height="718" controls preload="none">
   [mxbmrp2.mp4](https://github.com/user-attachments/assets/fb0fd555-4e59-425f-8d01-f7496b2b1cf2)
 </video>
 
