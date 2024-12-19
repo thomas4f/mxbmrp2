@@ -30,7 +30,7 @@ MX Bikes\
 
 For additional installation help, see the below video:
 
-https://github.com/user-attachments/assets/91b8b4b7-c59b-44e3-bcaa-cda1b985e830
+https://github.com/user-attachments/assets/5c409833-6a4a-4364-a203-b3dc4c76e45c
 
 ## Configuration
 
