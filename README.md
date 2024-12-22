@@ -4,7 +4,9 @@ A plugin for [MX Bikes](https://mx-bikes.com/) that displays event and server in
 
 ![mxbmrp2](https://github.com/user-attachments/assets/fad6f978-5035-465e-b6dd-b61eec51aeae)
 
-MXBMRP2 leverages the game's plugin system and memory reading to display a customizable HUD in-game. This information can be useful to let people know what bike or server you're on when sharing your screen or streaming, for example.
+MXBMRP2 leverages the game's plugin system and memory reading to display a customizable HUD in-game.
+
+This information can be useful to let people know what bike or server you're on when sharing your screen or streaming, for example.
 
 _This plugin is in early development and may contain bugs or incomplete features. If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page. Feature- and/or pull requests are also welcome!_
 
@@ -29,7 +31,6 @@ MX Bikes\
 ```
 
 For additional installation help, see the below video:
-
 https://github.com/user-attachments/assets/5c409833-6a4a-4364-a203-b3dc4c76e45c
 
 ## Configuration
@@ -71,6 +72,25 @@ Here's how to adjust the HUD position:
  - To position the HUD (roughly) on the center of the screen, set `position_x=0.5` and `position_y=0.5`.
  - Setting either value to `1.0` or greater will likely move the HUD outside the viewable area, depending on your screen resolution.
 
+### Font size and colors
+Here are some examples on how to configure the other settings:
+ - You can adjust the font size by modifying the `font_size` parameter in small increments. Increasing the value from `0.025` (the default) to `0.050` will double the size.
+ - `font_color` and `background_color` are specified in **ABGR** (Alpha, Blue, Green Red), meaning that:
+   - Red = `0xFF0000FF`,
+   - Green =  `0xFF00FF00`, and
+   - Blue = `0xFFFF0000`.
+ - To make the background fully transparent, set it to `0x00000000`, for fully black, use `0xFF000000`.
+
+### Font Family
+By default, the plugin uses the `CQ Mono` font to stay consistent with the [MaxHUD](https://forum.mx-bikes.com/index.php?topic=180.0) plugin. 
+
+MX Bikes also makes heavy use of the `Enter Sansman Italic` font, which is included as an alternative.
+
+Note that unlike the other settings, changing the font family requires a restart of the game.
+
+To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
+
+
 ## Notes
 
 ### The Connection Field
@@ -83,6 +103,7 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
- - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) Designed by Chequered Ink
- - [MaxHUD](https://forum.mx-bikes.com/index.php?topic=180.0) by HornetMaX for the font conversion.
+ - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
+ - Enter Sansman Font designed by Digital Graphic Labs.
  - @TokisFFS for early testing.
+ 

@@ -18,7 +18,7 @@
 
 // Constants
 constexpr size_t MAX_STRING_LENGTH = 48;
-constexpr const char* PLUGIN_VERSION = "mxbmrp2 v0.9.5";
+constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.6";
 constexpr const char* DATA_DIR = "mxbmrp2_data\\";
 constexpr const char* LOG_FILE = "mxbmrp2.log";
 constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
@@ -81,7 +81,7 @@ void Plugin::setDisplayConfig() {
 
         // Check if the font file exists in the "/plugins/" directory
         std::filesystem::path fontPath = std::filesystem::path("plugins") / displayConfig_.fontName;
-        if (!std::filesystem::exists(fontPath)) {
+        if (!std::filesystem::exists(fontPath) || !std::filesystem::is_regular_file(fontPath)) {
             throw std::runtime_error("Font file not found: " + fontPath.string());
         }
 
@@ -92,11 +92,12 @@ void Plugin::setDisplayConfig() {
         Logger::getInstance().log("Falling back to default Draw configuration values");
 
         // Define default values inline
-        displayConfig_.fontSize = 0.02f;
+        displayConfig_.fontSize = 0.025f;
         displayConfig_.fontColor = 0xFFFFFFFF;
         displayConfig_.backgroundColor = 0x7F000000;
         displayConfig_.positionX = 0.0f;
         displayConfig_.positionY = 0.0f;
+        displayConfig_.fontName = std::string(DATA_DIR) + "CQ Mono.fnt";
     }
 }
 
@@ -117,7 +118,7 @@ void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& 
     // Inline utility to check if a config key is enabled
     auto isEnabled = [this](const std::string& cfgKey) {
         return configManager_.getValue(cfgKey) == "true";
-    };
+        };
 
     // Update keys to display based on configuration and availability
     for (const auto& [configKey, displayName] : configKeyToDisplayNameMap) {
@@ -130,7 +131,8 @@ void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& 
                 // Special cases
                 if (configKey == "plugin_banner") {
                     displayString = value;
-                } else if (configKey == "rider_name" && isEnabled("race_number") && !allDataKeys_["race_number"].empty()) {
+                }
+                else if (configKey == "rider_name" && isEnabled("race_number") && !allDataKeys_["race_number"].empty()) {
                     displayString = displayName + ": " + allDataKeys_["race_number"] + " " + value;
                 }
                 else { // Everything else
@@ -334,7 +336,8 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
 
         serverName_ = memReader_.searchMemory(searchPattern, remoteServerNameSize, remoteServerNameOffset);
 
-    } else {
+    }
+    else {
         connectionType_ = "Offline";
     }
 
