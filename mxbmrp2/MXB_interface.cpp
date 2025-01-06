@@ -2,15 +2,10 @@
 // MXB_interface.cpp
 
 #include "pch.h"
+#include "Constants.h"
 #include "MXB_interface.h"
 #include "Logger.h"
 #include "Plugin.h"
-
-// Constants
-static const char* MOD_ID = "mxbikes";
-static const int MOD_DATA_VERSION = 8;
-static const int INTERFACE_VERSION = 9;
-static const int REFRESH_RATE = 3;
 
 // Exported functions
 

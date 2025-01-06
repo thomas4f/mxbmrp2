@@ -2,9 +2,9 @@
 // Plugin.cpp
 
 #include "pch.h"
+#include "Constants.h"
 #include "Plugin.h"
 #include "Logger.h"
-#include "ConfigManager.h"
 #include "MemReader.h"
 #include "KeyPressHandler.h"
 
@@ -12,17 +12,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
-#include <filesystem>
 
 #pragma comment(lib, "ws2_32.lib")
-
-// Constants
-constexpr size_t MAX_STRING_LENGTH = 48;
-constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.6";
-constexpr const char* DATA_DIR = "mxbmrp2_data\\";
-constexpr const char* LOG_FILE = "mxbmrp2.log";
-constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
-static constexpr UINT HOTKEY = 'R';
 
 // Singleton instance
 Plugin& Plugin::getInstance() {
@@ -68,37 +59,14 @@ void Plugin::shutdown() {
 
 // Load Draw-related config values
 void Plugin::setDisplayConfig() {
-    try {
-        // Load configuration values
-        displayConfig_.fontName = std::string(DATA_DIR) + configManager_.getValue("font_name");
-        displayConfig_.fontSize = std::stof(configManager_.getValue("font_size"));
-        displayConfig_.lineHeight = displayConfig_.fontSize * 1.1f;
-        displayConfig_.fontColor = std::stoul(configManager_.getValue("font_color"), nullptr, 16);
-        displayConfig_.backgroundColor = std::stoul(configManager_.getValue("background_color"), nullptr, 16);
-        displayConfig_.positionX = std::stof(configManager_.getValue("position_x"));
-        displayConfig_.positionY = std::stof(configManager_.getValue("position_y"));
-        displayConfig_.quadWidth = (displayConfig_.fontSize * MAX_STRING_LENGTH) / 4 + (displayConfig_.fontSize / 4);
-
-        // Check if the font file exists in the "/plugins/" directory
-        std::filesystem::path fontPath = std::filesystem::path("plugins") / displayConfig_.fontName;
-        if (!std::filesystem::exists(fontPath) || !std::filesystem::is_regular_file(fontPath)) {
-            throw std::runtime_error("Font file not found: " + fontPath.string());
-        }
-
-        Logger::getInstance().log("Draw configuration loaded successfully");
-    }
-    catch (const std::exception& e) {
-        Logger::getInstance().log(std::string("Error loading Draw configuration: ") + e.what());
-        Logger::getInstance().log("Falling back to default Draw configuration values");
-
-        // Define default values inline
-        displayConfig_.fontSize = 0.025f;
-        displayConfig_.fontColor = 0xFFFFFFFF;
-        displayConfig_.backgroundColor = 0x7F000000;
-        displayConfig_.positionX = 0.0f;
-        displayConfig_.positionY = 0.0f;
-        displayConfig_.fontName = std::string(DATA_DIR) + "CQ Mono.fnt";
-    }
+    displayConfig_.fontName = std::string(DATA_DIR) + configManager_.getValue<std::string>("font_name");
+    displayConfig_.fontSize = configManager_.getValue<float>("font_size");
+    displayConfig_.lineHeight = displayConfig_.fontSize * 1.1f;
+    displayConfig_.fontColor = configManager_.getValue<unsigned long>("font_color");
+    displayConfig_.backgroundColor = configManager_.getValue<unsigned long>("background_color");
+    displayConfig_.positionX = configManager_.getValue<float>("position_x");
+    displayConfig_.positionY = configManager_.getValue<float>("position_y");
+    displayConfig_.quadWidth = (displayConfig_.fontSize * MAX_STRING_LENGTH) / 4 + (displayConfig_.fontSize / 4);
 }
 
 // updateDataKeys
@@ -116,8 +84,8 @@ void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& 
     std::vector<std::string> displayKeysBuffer;
 
     // Inline utility to check if a config key is enabled
-    auto isEnabled = [this](const std::string& cfgKey) {
-        return configManager_.getValue(cfgKey) == "true";
+    auto isEnabled = [this](const std::string& cfgKey) -> bool {
+        return configManager_.getValue<bool>(cfgKey);
         };
 
     // Update keys to display based on configuration and availability
@@ -241,50 +209,27 @@ std::string Plugin::getConditionsDisplayName(int condition) {
     return it != conditionsMap.end() ? it->second : "Unknown";
 }
 
-// Helper to convert IP or port to a human-readable format
-std::string convertRawData(const std::string& rawData) {
-    if (rawData.size() == 4) {
-        std::ostringstream oss;
-        for (size_t i = 0; i < 4; ++i) {
-            oss << (i ? "." : "") << static_cast<int>(static_cast<unsigned char>(rawData[i]));
-        }
-        return oss.str();
+// Helper to convert IP to a human-readable format
+std::string toIPv4(const std::string& rawData) {
+    std::ostringstream oss;
+    for (size_t i = 0; i < 4; ++i) {
+        oss << (i ? "." : "") << static_cast<int>(static_cast<unsigned char>(rawData[i]));
     }
-    if (rawData.size() == 2) {
-        uint16_t port;
-        memcpy(&port, rawData.data(), sizeof(port));
-        return std::to_string(ntohs(port));
-    }
-    return "";
+    return oss.str();
 }
 
-// Helper to get custom data
-std::string Plugin::getCustomData(const std::string& keyOffset, const std::string& keySize, const std::string& label) {
-    // Fetch offsets and sizes
-    uintptr_t offset = std::stoul(configManager_.getValue(keyOffset), nullptr, 16);
-    size_t size = std::stoul(configManager_.getValue(keySize));
+// Helper to read memory
+std::string Plugin::readMemString(
+    bool relative,
+    const std::string& offsetKey,
+    const std::string& sizeKey,
+    const std::string& logKey,
+    bool nullTerminated
+) {
+    const auto offset = configManager_.getValue<unsigned long>(offsetKey);
+    const auto size = configManager_.getValue<unsigned long>(sizeKey);
 
-    // Read the memory at the given offset and size
-    std::string rawValue = memReader_.readStringAtOffset(offset, size, label);
-
-    if (label == "local_server_name" || label == "local_server_password" || label == "remote_server_password") {
-        // Truncate at the first null byte
-        return std::string(rawValue.c_str(), strnlen(rawValue.c_str(), size));
-    }
-    else if (label == "remote_server_ip" || label == "remote_server_port") {
-        // Store raw data in temporary variables
-        if (label == "remote_server_ip") {
-            rawRemoteServer_.insert(rawRemoteServer_.end(), rawValue.begin(), rawValue.end());
-        }
-        else if (label == "remote_server_port") {
-            rawRemoteServer_.insert(rawRemoteServer_.end(), rawValue.begin(), rawValue.end());
-        }
-
-        // Convert to a human-readable format
-        return convertRawData(rawValue);
-    }
-
-    return "";
+    return memReader_.readStringAtAddress(relative, offset, size, logKey, nullTerminated);
 }
 
 // Maps config keys to display names and sets display order
@@ -301,6 +246,7 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
     {"connection", "Connection"},
     {"server_name", "Server Name"},
     {"server_password", "Server Password"},
+    {"server_location", "Server Location"},
     {"event_type", "Event Type"},
     {"session", "Session"},
     {"session_state", "Session State"},
@@ -313,29 +259,88 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
     type_ = eventData.m_iType;
-    // we cant rely on type alone since it may be 1 (Testing) for Open Practice
-    localServerName_ = getCustomData("local_server_name_offset", "local_server_name_size", "local_server_name");
-    remoteServerIP_ = getCustomData("remote_server_ip_offset", "remote_server_ip_size", "remote_server_ip");
+
+    localServerName_ = readMemString(
+        true,
+        "local_server_name_offset",
+        "local_server_name_size",
+        "local_server_name",
+        true
+    );
+
+    std::string remoteServerIPHex = readMemString(
+        true,
+        "remote_server_ip_offset",
+        "remote_server_ip_size",
+        "remote_server_ip",
+        false // Do not null terminate
+    );
+
+    rawRemoteServer_.insert(rawRemoteServer_.end(), remoteServerIPHex.begin(), remoteServerIPHex.end());
+    remoteServerIP_ = toIPv4(remoteServerIPHex);
 
     if (!localServerName_.empty()) { // Host
         serverName_ = localServerName_;
         connectionType_ = "Host";
-        serverPassword_ = getCustomData("local_server_password_offset", "local_server_password_size", "local_server_password");
+        serverPassword_ = readMemString(
+            true,
+            "local_server_password_offset",
+            "local_server_password_size",
+            "local_server_password",
+            true
+        );
+
+        serverLocation_ = readMemString(
+            true,
+            "local_server_location_offset",
+            "local_server_location_size",
+            "local_server_location",
+            true
+        );
     }
     else if (remoteServerIP_ != "0.0.0.0") { // Client
-        remoteServerPort_ = getCustomData("remote_server_port_offset", "remote_server_port_size", "remote_server_port");
-        serverPassword_ = getCustomData("remote_server_password_offset", "remote_server_password_size", "remote_server_password");
+        std::string remoteServerPortHex = readMemString(
+            true,
+            "remote_server_port_offset",
+            "remote_server_port_size",
+            "remote_server_port",
+            false // Do not null terminate
+        );
+
+        rawRemoteServer_.insert(rawRemoteServer_.end(), remoteServerPortHex.begin(), remoteServerPortHex.end());
+
+        serverPassword_ = readMemString(
+            true,
+            "remote_server_password_offset",
+            "remote_server_password_size",
+            "remote_server_password",
+            true
+        );
+
         connectionType_ = "Client";
 
-        // Search for server name
-        std::string searchPattern(reinterpret_cast<char*>(rawRemoteServer_.data()), rawRemoteServer_.size());
+        // Edge case: Search for remote server name based on ip + port
+        std::string searchPattern(rawRemoteServer_.begin(), rawRemoteServer_.end());
+        const auto [remoteServerMemoryAddress, remoteServerName] = memReader_.searchMemory(
+            searchPattern,
+            configManager_.getValue<unsigned long>("remote_server_name_offset"),
+            configManager_.getValue<unsigned long>("remote_server_name_size"),
+            "remote_server_name",
+            true
+        );
 
-        // Get remote server name size and offset from configuration
-        size_t remoteServerNameSize = std::stoul(configManager_.getValue("remote_server_name_size"));
-        uintptr_t remoteServerNameOffset = std::stoul(configManager_.getValue("remote_server_name_offset"), nullptr, 16);
+        serverName_ = remoteServerName;
 
-        serverName_ = memReader_.searchMemory(searchPattern, remoteServerNameSize, remoteServerNameOffset);
-
+        // Edge case: Lookup remote server location based on remoteServerMemoryAddress
+        if (remoteServerMemoryAddress != 0) {
+            serverLocation_ = memReader_.readStringAtAddress(
+                false, // absolute address
+                remoteServerMemoryAddress + configManager_.getValue<unsigned long>("remote_server_location_offset"),
+                configManager_.getValue<unsigned long>("remote_server_location_size"),
+                "remote_server_location",
+                true
+            );
+        }
     }
     else {
         connectionType_ = "Offline";
@@ -352,6 +357,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         {"track_length", std::to_string(static_cast<int>(std::round(eventData.m_fTrackLength))) + " m"},
         {"server_name", serverName_},
         {"server_password", serverPassword_},
+        {"server_location", serverLocation_},
         {"connection", connectionType_},
         {"event_type", getEventTypeDisplayName(eventData.m_iType, connectionType_)}
     };
@@ -389,7 +395,7 @@ void Plugin::onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionSta
 
 // RaceAddEntry
 void Plugin::onRaceAddEntry(const SPluginsRaceAddEntry_t& raceAddEntry) {
-    Logger::getInstance().log(std::string(__func__) + " handler triggered");
+    //Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
     // Check whether the entry is in fact the local player
     if (raceAddEntry.m_szName == allDataKeys_["rider_name"] && raceAddEntry.m_szBikeName == allDataKeys_["bike_name"]) {
@@ -404,11 +410,11 @@ void Plugin::onEventDeinit() {
     // clear custom data keys
     localServerName_.clear();
     remoteServerIP_.clear();
-    remoteServerPort_.clear();
     rawRemoteServer_.clear();
     serverName_.clear();
     serverPassword_.clear();
     connectionType_.clear();
+    serverLocation_.clear();
 
     // Clear the display keys as well
     allDataKeys_.clear();

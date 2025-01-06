@@ -39,27 +39,26 @@ https://github.com/user-attachments/assets/5c409833-6a4a-4364-a203-b3dc4c76e45c
 Optionally, you can customize the `mxbmrp2.ini` configuration file to suit your preferences.
   
 Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
-| Field               | Example                           |
-|---------------------|-----------------------------------|
-| plugin_banner       | mxbmrp2 v0.9.3                    |
-| race_number         | _(prefixed to rider_name)_        | 
-| rider_name          | 4 Thomas                          |
-| category            | MX2 OEM                           |
-| bike_id             | MX2OEM_2023_KTM_250_SX-F          |
-| bike_name           | KTM 250 SX-F 2023                 |
-| setup               | Default                           |
-| track_id            | HM_swedish_midsummer_carnage_2    |
-| track_name          | HM \| Swedish Midsummer Carnage 2 |
-| track_length        | 965 m                             |
-| connection          | Host                              |
-| server_name         | thomas4f                          |
-| server_password     | verySecret                        |
-| event_type          | Race                              |
-| session_state       | Warmup                            |
-| conditions          | Clear                             |
-| air_temperature     | 20°C                              |
-
-**Note:** There are additional configurable values available. However, apart from adjusting the HUD position, it's recommended to modify these settings only if you are familiar with their functions to avoid unintended display issues.
+| Field               | Example                           | Notes                             |
+|---------------------|-----------------------------------|-----------------------------------|
+| plugin_banner       | mxbmrp2 v0.9.3                    |                                   |
+| race_number         |                                   | Prefixed to rider_name            |
+| rider_name          | 4 Thomas                          |                                   |
+| category            | MX2 OEM                           |                                   |
+| bike_id             | MX2OEM_2023_KTM_250_SX-F          |                                   |
+| bike_name           | KTM 250 SX-F 2023                 |                                   |
+| setup               | Default                           |                                   |
+| track_id            | HM_swedish_midsummer_carnage_2    |                                   |
+| track_name          | HM \| Swedish Midsummer Carnage 2 |                                   |
+| track_length        | 965 m                             |                                   |
+| connection          | Host                              | `Offline` means you're in testing, `Client` means you're connected to a remote server and `Host` means that you are hosting a server locally. | 
+| server_name         | thomas4f                          |                                   |
+| server_password     | verySecret                        |                                   |
+| server_location     | Europe                            | The server location as indicated by the administrator. | 
+| event_type          | Race                              |                                   |
+| session_state       | Warmup                            |                                   |
+| conditions          | Clear                             |                                   |
+| air_temperature     | 20°C                              |                                   |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. This will also reload any changes made to the configuration file.
@@ -91,13 +90,7 @@ Note that unlike the other settings, changing the font family requires a restart
 
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
-
 ## Notes
-
-### The Connection Field
- - `Offline` means you're in testing.
- - `Client` means you've connected to someone's server.
- - `Host` means that you are hosting a server.
 
 ### Custom Data Handling
 The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but let me know if you run into issues. 

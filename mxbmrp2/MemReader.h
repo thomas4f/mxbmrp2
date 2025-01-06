@@ -15,11 +15,10 @@ public:
     void initialize();
 
     // Read a string from a specific memory offset
-    // Optionally specify the number of bytes to read (default: 64)
-    std::string readStringAtOffset(uintptr_t offset, size_t size = 64, const std::string& label = "");
+    std::string readStringAtAddress(bool relative, uintptr_t offset, size_t size = 64, const std::string& label = "", bool truncateAtNull = true);
 
-        // Search memory for a specific string pattern
-    std::string searchMemory(const std::string& searchString, size_t size, size_t offset = 0);
+    // Search memory for a specific string pattern
+    std::tuple<uintptr_t, std::string> searchMemory(const std::string& searchString, size_t offset = 0, size_t size = 32, const std::string& label = "", bool truncateAtNull = true);
 
     // Destructor
     ~MemReader();

@@ -60,8 +60,14 @@ private:
     // Mutex for thread-safe operations
     std::mutex mutex_;
 
-    // Wrapper for getting custom data with memreader
-    std::string getCustomData(const std::string& keyOffset, const std::string& keySize, const std::string& label);
+    // Helper to read memory
+    std::string readMemString(
+        bool relative,
+        const std::string& offsetKey,
+        const std::string& sizeKey,
+        const std::string& logKey,
+        bool nullTerminated
+    );
 
     // Helper to process and update draw fields
     void updateDataKeys(const std::unordered_map<std::string, std::string>& fields);
@@ -79,10 +85,10 @@ private:
     int type_ = 0;
     std::string serverName_ = "";
     std::string serverPassword_ = "";
+    std::string serverLocation_ = "";
     std::string localServerName_ = "";
     std::string localServerPassword_ = "";
     std::string remoteServerIP_ = "";
-    std::string remoteServerPort_ = "";
     std::string connectionType_ = "";
 
     std::vector<unsigned char> rawRemoteServer_;

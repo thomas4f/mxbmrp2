@@ -3,8 +3,16 @@ REM make_release.bat
 
 @echo off
 
-REM Define the release name
-set "release=mxbmrp2-v0.9.5"
+REM Check if a release name was passed
+IF [%1] == [] (
+    echo Usage: %~0 ^<release_name^>
+    pause
+    exit /b 1
+)
+
+REM Set the release name from the parameter
+set "release=%~1"
+echo Release name is: %release%
 
 REM Create the release directories
 mkdir ".\Releases\%release%\mxbmrp2_data" 2>nul
