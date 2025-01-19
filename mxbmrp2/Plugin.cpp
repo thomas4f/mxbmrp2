@@ -44,17 +44,58 @@ void Plugin::initialize() {
     // Initialize MemReader
     memReader_.initialize();
 
+    // Initialize displayEnabled_ from enable_hud config
+    displayEnabled_ = configManager_.getValue<bool>("default_enabled");
+
     // Now that ConfigManager is loaded, load Draw configuration
     setDisplayConfig();
 
     // Initialize KeyPressHandler with the toggleDisplay callback
     keyPressHandler_ = std::make_unique<KeyPressHandler>([this]() { this->toggleDisplay(); }, HOTKEY);
     Logger::getInstance().log("KeyPressHandler initialized with hotkey CTRL + " + std::string(1, static_cast<char>(HOTKEY)));
+
+    // Start the periodic task thread
+    stopPeriodicTask_ = false;
+    periodicTaskThread_ = std::thread(&Plugin::periodicTaskLoop, this);
 }
 
 // Shutdown the plugin
 void Plugin::shutdown() {
     Logger::getInstance().log("Plugin shutting down");
+
+    // Signal the periodic task thread to stop
+    stopPeriodicTask_ = true;
+    if (periodicTaskThread_.joinable()) {
+        periodicTaskThread_.join();
+    }
+}
+
+// Periodic tasks
+void Plugin::periodicTaskLoop() {
+    Logger::getInstance().log("Periodic task thread started");
+
+    while (!stopPeriodicTask_) {
+        if (connectionType_ == "Client") {
+            std::string remoteServerPingHex = memReader_.readStringAtAddress(
+                true,
+                configManager_.getValue<unsigned long>("remote_server_ping_offset"),
+                configManager_.getValue<unsigned long>("remote_server_ping_size"),
+                "remote_server_ping",
+                false
+            );
+
+            // Extract the two bytes and combine them to form a little-endian integer
+            unsigned int remoteServerPing = static_cast<unsigned char>(remoteServerPingHex[0]) |
+                (static_cast<unsigned char>(remoteServerPingHex[1]) << 8);
+
+            updateDataKeys({ {"server_ping", remoteServerPing ? std::to_string(remoteServerPing) + " ms" : "N/A"} });
+        }
+
+        // Sleep for the configured interval
+        std::this_thread::sleep_for(std::chrono::milliseconds(PERIODICTASKINTERVAL));
+    }
+
+    Logger::getInstance().log("Periodic task thread stopped.");
 }
 
 // Load Draw-related config values
@@ -71,8 +112,6 @@ void Plugin::setDisplayConfig() {
 
 // updateDataKeys
 void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& dataKeys) {
-    Logger::getInstance().log("Updating data keys");
-
     std::lock_guard<std::mutex> guard(mutex_);
 
     // Update or add keys from the input map to allDataKeys_
@@ -119,7 +158,7 @@ void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& 
 // Public getter for keys to display
 std::vector<std::string> Plugin::getDisplayKeys() {
     std::lock_guard<std::mutex> guard(mutex_);
-    return dataKeysToDisplay_;
+    return displayEnabled_ ? dataKeysToDisplay_ : std::vector<std::string>{};
 }
 
 // Helper to convert event types
@@ -236,19 +275,20 @@ std::string Plugin::readMemString(
 const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDisplayNameMap = {
     {"plugin_banner", "Plugin Banner"},
     {"rider_name", "Rider Name"},
-    {"category", "Category"},
+    {"bike_category", "Bike Category"},
     {"bike_id", "Bike ID"},
     {"bike_name", "Bike Name"},
-    {"setup", "Setup"},
+    {"setup_name", "Setup Name"},
     {"track_id", "Track ID"},
     {"track_name", "Track Name"},
     {"track_length", "Track Length"},
-    {"connection", "Connection"},
+    {"connection_type", "Connection Type"},
     {"server_name", "Server Name"},
     {"server_password", "Server Password"},
     {"server_location", "Server Location"},
+    {"server_ping", "Server Ping"},
     {"event_type", "Event Type"},
-    {"session", "Session"},
+    {"session_type", "Session Type"},
     {"session_state", "Session State"},
     {"conditions", "Conditions"},
     {"air_temperature", "Air Temperature"}
@@ -258,8 +298,9 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
 void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-    type_ = eventData.m_iType;
+    eventType_ = eventData.m_iType;
 
+    // local_server_name
     localServerName_ = readMemString(
         true,
         "local_server_name_offset",
@@ -268,7 +309,8 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         true
     );
 
-    std::string remoteServerIPHex = readMemString(
+    // remote_server_ip
+    std::string remoteServerIPAddressHex = readMemString(
         true,
         "remote_server_ip_offset",
         "remote_server_ip_size",
@@ -276,12 +318,14 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         false // Do not null terminate
     );
 
-    rawRemoteServer_.insert(rawRemoteServer_.end(), remoteServerIPHex.begin(), remoteServerIPHex.end());
-    remoteServerIP_ = toIPv4(remoteServerIPHex);
+    remoteServerSocketAddressHex_.insert(remoteServerSocketAddressHex_.end(), remoteServerIPAddressHex.begin(), remoteServerIPAddressHex.end());
+    remoteServerIPAddress_ = toIPv4(remoteServerIPAddressHex);
 
     if (!localServerName_.empty()) { // Host
         serverName_ = localServerName_;
         connectionType_ = "Host";
+
+		// local_server_password
         serverPassword_ = readMemString(
             true,
             "local_server_password_offset",
@@ -290,6 +334,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
             true
         );
 
+        // local_server_location
         serverLocation_ = readMemString(
             true,
             "local_server_location_offset",
@@ -298,7 +343,10 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
             true
         );
     }
-    else if (remoteServerIP_ != "0.0.0.0") { // Client
+    else if (remoteServerIPAddress_ != "0.0.0.0") { // Client
+        connectionType_ = "Client";
+
+        // remote_server_port
         std::string remoteServerPortHex = readMemString(
             true,
             "remote_server_port_offset",
@@ -307,8 +355,9 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
             false // Do not null terminate
         );
 
-        rawRemoteServer_.insert(rawRemoteServer_.end(), remoteServerPortHex.begin(), remoteServerPortHex.end());
+        remoteServerSocketAddressHex_.insert(remoteServerSocketAddressHex_.end(), remoteServerPortHex.begin(), remoteServerPortHex.end());
 
+        // remote_server_password
         serverPassword_ = readMemString(
             true,
             "remote_server_password_offset",
@@ -317,11 +366,10 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
             true
         );
 
-        connectionType_ = "Client";
-
-        // Edge case: Search for remote server name based on ip + port
-        std::string searchPattern(rawRemoteServer_.begin(), rawRemoteServer_.end());
-        const auto [remoteServerMemoryAddress, remoteServerName] = memReader_.searchMemory(
+        // Edge case: remoteServerMemoryAddress_ and remote_server_name (based on ip + port)
+        std::string remoteServerName;
+        std::string searchPattern(remoteServerSocketAddressHex_.begin(), remoteServerSocketAddressHex_.end());
+        std::tie(remoteServerMemoryAddress_, remoteServerName) = memReader_.searchMemory(
             searchPattern,
             configManager_.getValue<unsigned long>("remote_server_name_offset"),
             configManager_.getValue<unsigned long>("remote_server_name_size"),
@@ -331,11 +379,11 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
 
         serverName_ = remoteServerName;
 
-        // Edge case: Lookup remote server location based on remoteServerMemoryAddress
-        if (remoteServerMemoryAddress != 0) {
+        // Edge case: remote_server_location (relative to remoteServerMemoryAddress_)
+        if (remoteServerMemoryAddress_ != 0) {
             serverLocation_ = memReader_.readStringAtAddress(
                 false, // absolute address
-                remoteServerMemoryAddress + configManager_.getValue<unsigned long>("remote_server_location_offset"),
+                remoteServerMemoryAddress_ + configManager_.getValue<unsigned long>("remote_server_location_offset"),
                 configManager_.getValue<unsigned long>("remote_server_location_size"),
                 "remote_server_location",
                 true
@@ -349,7 +397,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
     std::unordered_map<std::string, std::string> dataKeys = {
         {"plugin_banner", PLUGIN_VERSION},
         {"rider_name", eventData.m_szRiderName},
-        {"category", eventData.m_szCategory},
+        {"bike_category", eventData.m_szCategory},
         {"bike_id", eventData.m_szBikeID},
         {"bike_name", eventData.m_szBikeName},
         {"track_id", eventData.m_szTrackID},
@@ -358,7 +406,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
         {"server_name", serverName_},
         {"server_password", serverPassword_},
         {"server_location", serverLocation_},
-        {"connection", connectionType_},
+        {"connection_type", connectionType_},
         {"event_type", getEventTypeDisplayName(eventData.m_iType, connectionType_)}
     };
 
@@ -370,8 +418,8 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
     Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
     std::unordered_map<std::string, std::string> dataKeys = {
-        {"setup", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default"},
-        {"session", getSessionDisplayName(type_, sessionData.m_iSession)},
+        {"setup_name", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default"},
+        {"session_type", getSessionDisplayName(eventType_, sessionData.m_iSession)},
         {"conditions", getConditionsDisplayName(sessionData.m_iConditions)},
         {"air_temperature", std::to_string(static_cast<int>(std::round(sessionData.m_fAirTemperature))) + "°C"}
     };
@@ -409,8 +457,8 @@ void Plugin::onEventDeinit() {
 
     // clear custom data keys
     localServerName_.clear();
-    remoteServerIP_.clear();
-    rawRemoteServer_.clear();
+    remoteServerIPAddress_.clear();
+    remoteServerSocketAddressHex_.clear();
     serverName_.clear();
     serverPassword_.clear();
     connectionType_.clear();
@@ -423,19 +471,19 @@ void Plugin::onEventDeinit() {
 
 // Define the callback function
 void Plugin::toggleDisplay() {
-
-    // Toggle display
     displayEnabled_ = !displayEnabled_;
-    if (!displayEnabled_) {
-        dataKeysToDisplay_.clear();
-        Logger::getInstance().log("Display disabled.");
-    }
-    else {
+
+    if (displayEnabled_) {
+        Logger::getInstance().log("Display enabled.");
+
+        // Reload configuration and update display settings
         configManager_.loadConfig("plugins\\" + std::string(DATA_DIR) + std::string(CONFIG_FILE));
         setDisplayConfig();
 
         // Re-populate displayKeysToDisplay_ based on current allDataKeys_
         updateDataKeys(allDataKeys_);
-        Logger::getInstance().log("Display enabled.");
+    }
+    else {
+        Logger::getInstance().log("Display disabled.");
     }
 }

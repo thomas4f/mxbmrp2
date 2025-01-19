@@ -16,24 +16,26 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"plugin_banner", {ConfigType::BOOL, true}},
     {"race_number", {ConfigType::BOOL, true}},
     {"rider_name", {ConfigType::BOOL, true}},
-    {"category", {ConfigType::BOOL, false}},
+    {"bike_category", {ConfigType::BOOL, false}},
     {"bike_id", {ConfigType::BOOL, false}},
     {"bike_name", {ConfigType::BOOL, true}},
-    {"setup", {ConfigType::BOOL, false}},
+    {"setup_name", {ConfigType::BOOL, false}},
     {"track_id", {ConfigType::BOOL, false}},
     {"track_name", {ConfigType::BOOL, true}},
     {"track_length", {ConfigType::BOOL, false}},
-    {"connection", {ConfigType::BOOL, false}},
+    {"connection_type", {ConfigType::BOOL, false}},
     {"server_name", {ConfigType::BOOL, true}},
     {"server_password", {ConfigType::BOOL, false}},
     {"server_location", {ConfigType::BOOL, false}},
+    {"server_ping", {ConfigType::BOOL, true}},
     {"event_type", {ConfigType::BOOL, false}},
-    {"session", {ConfigType::BOOL, false}},
+    {"session_type", {ConfigType::BOOL, false}},
     {"session_state", {ConfigType::BOOL, false}},
     {"conditions", {ConfigType::BOOL, false}},
     {"air_temperature", {ConfigType::BOOL, false}},
 
     // GUI configuration
+    {"default_enabled", {ConfigType::BOOL, true}},
     {"position_x", {ConfigType::FLOAT, 0.0f}},
     {"position_y", {ConfigType::FLOAT, 0.0f}},
     {"font_name", {ConfigType::STRING, std::string("CQ Mono.fnt")}},
@@ -57,7 +59,9 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"remote_server_name_offset", {ConfigType::ULONG, 0x19UL}},
     {"remote_server_name_size", {ConfigType::ULONG, 64UL}},
     {"remote_server_location_offset", {ConfigType::ULONG, 0x73UL}},
-    {"remote_server_location_size", {ConfigType::ULONG, 32UL}}
+    {"remote_server_location_size", {ConfigType::ULONG, 32UL}},
+    {"remote_server_ping_offset", {ConfigType::ULONG, 0xFEUL}},
+    {"remote_server_ping_size", {ConfigType::ULONG, 2UL}}
 };
 
 // Singleton instance

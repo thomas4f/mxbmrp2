@@ -4,7 +4,8 @@
 #pragma once
 
 #include <mutex>
-#include <memory> 
+#include <memory>
+
 #include "MXB_interface.h"
 #include "ConfigManager.h"
 #include "MemReader.h"
@@ -82,16 +83,17 @@ private:
     std::string getConditionsDisplayName(int condition);
 
     // Custom data keys
-    int type_ = 0;
+    int eventType_ = 0;
     std::string serverName_ = "";
     std::string serverPassword_ = "";
     std::string serverLocation_ = "";
     std::string localServerName_ = "";
     std::string localServerPassword_ = "";
-    std::string remoteServerIP_ = "";
+    std::string remoteServerIPAddress_ = "";
     std::string connectionType_ = "";
 
-    std::vector<unsigned char> rawRemoteServer_;
+    std::vector<unsigned char> remoteServerSocketAddressHex_;
+    uintptr_t remoteServerMemoryAddress_ = 0;
 
     // Stores all key-value pairs of data for processing and display.
     std::unordered_map<std::string, std::string> allDataKeys_;
@@ -104,4 +106,9 @@ private:
 
     // Display state flag
     bool displayEnabled_ = true;
+
+    // Periodic tasks
+    std::thread periodicTaskThread_;
+    std::atomic<bool> stopPeriodicTask_{ false };
+    void periodicTaskLoop();
 };

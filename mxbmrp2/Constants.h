@@ -7,12 +7,13 @@
 #include <cstdint>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.7";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.8";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data\\";
 inline constexpr const char* LOG_FILE = "mxbmrp2.log";
 inline constexpr const char* CONFIG_FILE = "mxbmrp2.ini";
 inline constexpr UINT HOTKEY = 'R';
 inline constexpr std::size_t MAX_STRING_LENGTH = 48;
+inline constexpr int PERIODICTASKINTERVAL = 2000;
 
 // MXB_interface
 inline constexpr const char* MOD_ID = "mxbikes";

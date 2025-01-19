@@ -34,38 +34,42 @@ For additional installation help, see the below video:
 
 https://github.com/user-attachments/assets/5c409833-6a4a-4364-a203-b3dc4c76e45c
 
-## Configuration
+## Basic configuration
 
 Optionally, you can customize the `mxbmrp2.ini` configuration file to suit your preferences.
-  
+
+### Available fields 
 Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
 | Field               | Example                           | Notes                             |
 |---------------------|-----------------------------------|-----------------------------------|
 | plugin_banner       | mxbmrp2 v0.9.3                    |                                   |
 | race_number         |                                   | Prefixed to rider_name            |
 | rider_name          | 4 Thomas                          |                                   |
-| category            | MX2 OEM                           |                                   |
+| bike_category       | MX2 OEM                           |                                   |
 | bike_id             | MX2OEM_2023_KTM_250_SX-F          |                                   |
 | bike_name           | KTM 250 SX-F 2023                 |                                   |
-| setup               | Default                           |                                   |
+| setup_name          | Default                           |                                   |
 | track_id            | HM_swedish_midsummer_carnage_2    |                                   |
 | track_name          | HM \| Swedish Midsummer Carnage 2 |                                   |
 | track_length        | 965 m                             |                                   |
-| connection          | Host                              | `Offline` means you're in testing, `Client` means you're connected to a remote server and `Host` means that you are hosting a server locally. | 
+| connection_type     | Host                              | `Offline` means "Testing", `Client` means you're "Racing" online and `Host` refers to the "Host World" option. | 
 | server_name         | thomas4f                          |                                   |
 | server_password     | verySecret                        |                                   |
 | server_location     | Europe                            | The server location as indicated by the administrator. | 
+| server_ping         | 147 ms                            | If you're a client, the reponse time (ping) will be updated periodically. |
 | event_type          | Race                              |                                   |
 | session_state       | Warmup                            |                                   |
 | conditions          | Clear                             |                                   |
 | air_temperature     | 20°C                              |                                   |
 
 ### Toggle HUD display
-Press `CTRL+R` to toggle the HUD on or off. This will also reload any changes made to the configuration file.
+Press `CTRL+R` to toggle the HUD on or off. **This will also reload any changes made to the configuration file**.
 
-### Position of the HUD
-You cannot adjust the HUD position or other settings directly within the game interface. However, you can customize its position by editing the configuration file and toggling the HUD on and off using the `CTRL+R` shortcut.
+By default, the HUD is enabled when you start the game. If you prefer it to be disabled by default, set `default_enabled` to `false`.
 
+## Other HUD attributes
+
+### HUD position
 Here's how to adjust the HUD position:
  - The HUD position is specified using normalized values between `0.0` and `1.0`.
  - `position_x` controls the horizontal placement (from the left)  and `position_y` controls the vertical placement (from the top).
@@ -81,7 +85,7 @@ Here are some examples on how to configure the other settings:
    - Blue = `0xFFFF0000`.
  - To make the background fully transparent, set it to `0x00000000`, for fully black, use `0xFF000000`.
 
-### Font Family
+### Font family
 By default, the plugin uses the `CQ Mono` font to stay consistent with the [MaxHUD](https://forum.mx-bikes.com/index.php?topic=180.0) plugin. 
 
 MX Bikes also makes heavy use of the `Enter Sansman Italic` font, which is included as an alternative.
@@ -90,9 +94,9 @@ Note that unlike the other settings, changing the font family requires a restart
 
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
-## Notes
+## Final notes
 
-### Custom Data Handling
+### Memory reading
 The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but let me know if you run into issues. 
 
 ## Credits
