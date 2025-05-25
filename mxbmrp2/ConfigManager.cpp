@@ -2,13 +2,16 @@
 // ConfigManager.cpp
 
 #include "pch.h"
+
+#include <fstream>
+#include <algorithm>
+#include <filesystem>
+#include <sstream>
+#include <iomanip>
+
 #include "Constants.h"
 #include "ConfigManager.h"
 #include "Logger.h"
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <filesystem>
 
 // Definition of configOptions_
 const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager::configOptions_ = {
@@ -19,7 +22,7 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"bike_category", {ConfigType::BOOL, false}},
     {"bike_id", {ConfigType::BOOL, false}},
     {"bike_name", {ConfigType::BOOL, true}},
-    {"setup_name", {ConfigType::BOOL, false}},
+    {"setup_name", {ConfigType::BOOL, true}},
     {"track_id", {ConfigType::BOOL, false}},
     {"track_name", {ConfigType::BOOL, true}},
     {"track_length", {ConfigType::BOOL, false}},
@@ -28,6 +31,7 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"server_password", {ConfigType::BOOL, false}},
     {"server_location", {ConfigType::BOOL, false}},
     {"server_ping", {ConfigType::BOOL, true}},
+    {"server_clients", {ConfigType::BOOL, true}},
     {"event_type", {ConfigType::BOOL, false}},
     {"session_type", {ConfigType::BOOL, false}},
     {"session_state", {ConfigType::BOOL, false}},
@@ -38,30 +42,30 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"default_enabled", {ConfigType::BOOL, true}},
     {"position_x", {ConfigType::FLOAT, 0.0f}},
     {"position_y", {ConfigType::FLOAT, 0.0f}},
+
     {"font_name", {ConfigType::STRING, std::string("CQ Mono.fnt")}},
     {"font_size", {ConfigType::FLOAT, 0.025f}},
     {"font_color", {ConfigType::ULONG, 0xFFFFFFFFUL}},
     {"background_color", {ConfigType::ULONG, 0x7F000000UL}},
 
     // Memory configuration
-    {"local_server_name_offset", {ConfigType::ULONG, 0x9CA748UL}},
-    {"local_server_name_size", {ConfigType::ULONG, 64UL}},
-    {"local_server_password_offset", {ConfigType::ULONG, 0x9CA78CUL}},
-    {"local_server_password_size", {ConfigType::ULONG, 32UL}},
-    {"local_server_location_offset", {ConfigType::ULONG, 0x9CA7ACUL}},
-    {"local_server_location_size", {ConfigType::ULONG, 32UL}},
-    {"remote_server_ip_offset", {ConfigType::ULONG, 0x57F2D4UL}},
-    {"remote_server_ip_size", {ConfigType::ULONG, 4UL}},
-    {"remote_server_port_offset", {ConfigType::ULONG, 0x57F2C2UL}},
-    {"remote_server_port_size", {ConfigType::ULONG, 2UL}},
-    {"remote_server_password_offset", {ConfigType::ULONG, 0x9B1E04UL}},
-    {"remote_server_password_size", {ConfigType::ULONG, 32UL}},
-    {"remote_server_name_offset", {ConfigType::ULONG, 0x19UL}},
-    {"remote_server_name_size", {ConfigType::ULONG, 64UL}},
-    {"remote_server_location_offset", {ConfigType::ULONG, 0x73UL}},
-    {"remote_server_location_size", {ConfigType::ULONG, 32UL}},
-    {"remote_server_ping_offset", {ConfigType::ULONG, 0xFEUL}},
-    {"remote_server_ping_size", {ConfigType::ULONG, 2UL}}
+    {"local_server_name_offset",{ConfigType::ULONG,0x9D6768UL}},
+    {"local_server_password_offset",{ConfigType::ULONG,0x9D67ACUL}},
+    {"local_server_location_offset",{ConfigType::ULONG,0x9D67CCUL}},
+    {"local_server_clients_max_offset",{ConfigType::ULONG,0x9D6820UL}},
+
+    {"remote_server_sockaddr_offset",{ConfigType::ULONG,0x58B2BCUL}},
+    {"remote_server_password_offset",{ConfigType::ULONG,0x9BDE04UL}},
+    {"remote_server_name_offset",{ConfigType::ULONG,0x1BUL}},
+    {"remote_server_location_offset",{ConfigType::ULONG,0x75UL}},
+    {"remote_server_ping_offset",{ConfigType::ULONG,0x58B534UL}},
+    {"remote_server_clients_max_offset",{ConfigType::ULONG,0x5DUL}},
+
+    {"server_categories_offset",{ConfigType::ULONG,0x58B634UL}},
+    {"server_track_id",{ConfigType::ULONG,0x58B5D4UL}},
+    {"server_clients_offset",{ConfigType::ULONG,0xE49F28UL}},
+
+    {"connection_string_offset",{ConfigType::ULONG,0x559DC0UL}},
 };
 
 // Singleton instance
@@ -107,14 +111,74 @@ bool ConfigManager::isValidUlong(const std::string& value) {
     }
 }
 
-// Load configuration file with type validation
-void ConfigManager::loadConfig(const std::string& filePath) {
-    std::lock_guard<std::mutex> guard(mutex_);
+static std::string stringifyDefault(const ConfigManager::ConfigOption& opt) {
+    return std::visit(
+        [&](auto&& v) -> std::string {
+            using T = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<T, bool>) {
+                return v ? "true" : "false";
+            }
+            else if constexpr (std::is_same_v<T, unsigned long>) {
+                std::ostringstream oss;
+                oss << "0x"
+                    << std::uppercase << std::hex
+                    << v;
+                return oss.str();
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+                return std::to_string(v);
+            }
+            else { // std::string
+                return v;
+            }
+        },
+        opt.defaultValue
+    );
+}
+
+
+// Write default configuration to file
+void ConfigManager::writeDefaultConfig(const std::filesystem::path& outPath) {
+    // copy our literal into a mutable std::string
+    std::string rendered = DEFAULT_INI_TEMPLATE;
+
+    // replace every {{key}} with its default
+    for (auto& [key, opt] : configOptions_) {
+        std::string tag = "{{" + key + "}}";
+        std::string val = stringifyDefault(opt);
+
+        size_t pos = 0;
+        while ((pos = rendered.find(tag, pos)) != std::string::npos) {
+            rendered.replace(pos, tag.size(), val);
+            pos += val.size();
+        }
+    }
+
+    // atomically write the file
+    auto tmp = outPath.string() + ".tmp";
+    std::ofstream ofs(tmp, std::ios::trunc);
+    if (!ofs) throw std::runtime_error("Unable to open " + tmp);
+    ofs << rendered;
+    ofs.close();
+    std::filesystem::rename(tmp, outPath);
+}
+
+
+
+
+void ConfigManager::loadConfig(const std::filesystem::path& cfgPath) {
+    std::lock_guard<std::mutex> lk(mutex_);
+
+    if (!std::filesystem::exists(cfgPath)) {
+        Logger::getInstance().log("Config not found, creating defaults: " + cfgPath.string());
+        writeDefaultConfig(cfgPath);
+    }
+
     config_.clear();
 
-    std::ifstream configFile(filePath);
+    std::ifstream configFile(cfgPath);
     if (configFile.is_open()) {
-        Logger::getInstance().log("Loading config file: " + filePath);
+        Logger::getInstance().log("Loading config file: " + cfgPath.string());
         std::string line;
         int lineNumber = 0;
         while (std::getline(configFile, line)) {
@@ -212,7 +276,7 @@ void ConfigManager::loadConfig(const std::string& filePath) {
         }
     }
     else {
-        Logger::getInstance().log("Failed to open config file: " + filePath);
+        Logger::getInstance().log("Failed to open config file: " + cfgPath.string());
     }
 
     // Fill missing keys with default values

@@ -56,14 +56,16 @@ Below is a brief description of the available fields within the `Draw configurat
 | server_name         | thomas4f                          |                                   |
 | server_password     | verySecret                        |                                   |
 | server_location     | Europe                            | The server location as indicated by the administrator. | 
-| server_ping         | 147 ms                            | If you're a client, the reponse time (ping) will be updated periodically. |
+| server_clients      | 12/24                             | The number of players connected to the server. |
+| server_ping         | 147 ms                            | The reponse time (ping) when racing online. |
 | event_type          | Race                              |                                   |
-| session_state       | Warmup                            |                                   |
+| session_type        | Warmup                            |                                   |
+| session_state       | In progress                       |                                   |
 | conditions          | Clear                             |                                   |
 | air_temperature     | 20°C                              |                                   |
 
 ### Toggle HUD display
-Press `CTRL+R` to toggle the HUD on or off. **This will also reload any changes made to the configuration file**.
+Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
 
 By default, the HUD is enabled when you start the game. If you prefer it to be disabled by default, set `default_enabled` to `false`.
 
@@ -90,7 +92,7 @@ By default, the plugin uses the `CQ Mono` font to stay consistent with the [MaxH
 
 MX Bikes also makes heavy use of the `Enter Sansman Italic` font, which is included as an alternative.
 
-Note that unlike the other settings, changing the font family requires a restart of the game.
+Note that unlike the other settings, **changing the font family requires a restart of the game**.
 
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
@@ -103,5 +105,5 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
  - Enter Sansman Font designed by Digital Graphic Labs.
- - @TokisFFS for early testing.
+ - @TokisFFS and everyone who contributed to early testing and feedback.
  

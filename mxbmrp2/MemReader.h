@@ -5,6 +5,7 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
 
 class MemReader {
 public:
@@ -14,11 +15,21 @@ public:
     // Initialize the MemReader
     void initialize();
 
-    // Read a string from a specific memory offset
-    std::string readStringAtAddress(bool relative, uintptr_t offset, size_t size = 64, const std::string& label = "", bool truncateAtNull = true);
+    // Read a value from a specific memory offset
+    std::vector<uint8_t> readRawBytesAtAddress(
+        bool relative,
+        uintptr_t offset,
+        size_t size,
+        const char* callerName = nullptr
+    );
 
     // Search memory for a specific string pattern
-    std::tuple<uintptr_t, std::string> searchMemory(const std::string& searchString, size_t offset = 0, size_t size = 32, const std::string& label = "", bool truncateAtNull = true);
+    std::tuple<uintptr_t, std::string> searchMemoryRaw(
+        const std::vector<uint8_t>& pattern,
+        size_t readOffset,
+        size_t readSize,
+        const char* callerName
+    );
 
     // Destructor
     ~MemReader();

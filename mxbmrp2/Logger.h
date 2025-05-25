@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <mutex>
+#include <filesystem>
 
 class Logger {
 public:
@@ -14,11 +15,8 @@ public:
     // Logs a message to the log file
     void log(const std::string& message, bool newline = true);
 
-    // Clear the log file
-    void truncate();
-
     // Set the log file name (must be called before any logging)
-    void setLogFileName(const std::string& fileName);
+    void setLogFileName(const std::filesystem::path& filePath);
 
 private:
     // Private constructor to enforce singleton pattern
@@ -31,10 +29,11 @@ private:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
-    std::string logFileName_;
-    std::mutex mutex_;
+    std::filesystem::path logFilePath_;
     std::ofstream logFile_;
 
     // Internal helper to open the log file
     void openLogFile();
+
+    std::mutex mutex_;
 };

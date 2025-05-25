@@ -27,7 +27,7 @@ extern "C" {
         float m_fTrackLength;
         int m_iType;
     } SPluginsBikeEvent_t;
-        
+
     // RunInit
     typedef struct {
         int m_iSession;
@@ -52,18 +52,9 @@ extern "C" {
         int m_iJustify;
         unsigned long m_ulColor;
     } SPluginString_t;
- 
-    // RaceEvent
-    typedef struct {
-        int m_iType;
-        char m_szName[100];
-        char m_szTrackName[100];
-        float m_fTrackLength;
-    } SPluginsRaceEvent_t;
 
     // RaceSession
-    typedef struct
-    {
+    typedef struct {
         int m_iSession;
         int m_iSessionState;
         int m_iSessionLength;
@@ -78,7 +69,7 @@ extern "C" {
         int m_iSessionState;
         int m_iSessionLength;
     } SPluginsRaceSessionState_t;
-    
+
     // RaceAddEntry
     typedef struct {
         int m_iRaceNum;
@@ -91,6 +82,11 @@ extern "C" {
         int m_iMaxRPM;
     } SPluginsRaceAddEntry_t;
 
+    // RaceRemoveEntry
+    typedef struct {
+        int m_iRaceNum;
+    } SPluginsRaceRemoveEntry_t;
+
     // Functions exported to the game
     __declspec(dllexport) const char* GetModID();
     __declspec(dllexport) int GetModDataVersion();
@@ -102,7 +98,11 @@ extern "C" {
     __declspec(dllexport) int DrawInit(int* _piNumSprites, char** _pszSpriteName, int* _piNumFonts, char** _pszFontName);
     __declspec(dllexport) void Draw(int _iState, int* _piNumQuads, void** _ppQuad, int* _piNumString, void** _ppString);
     __declspec(dllexport) void RunInit(void* _pData, int _iDataSize);
+    __declspec(dllexport) void RunDeinit();
     __declspec(dllexport) void RaceSession(void* _pData, int _iDataSize);
     __declspec(dllexport) void RaceSessionState(void* _pData, int _iDataSize);
     __declspec(dllexport) void RaceAddEntry(void* _pData, int _iDataSize);
+    __declspec(dllexport) void RaceRemoveEntry(void* _pData, int _iDataSize);
+    __declspec(dllexport) void RunStart();
+    __declspec(dllexport) void RunStop();
 }

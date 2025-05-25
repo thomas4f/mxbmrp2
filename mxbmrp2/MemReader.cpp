@@ -2,14 +2,17 @@
 // MemReader.cpp
 
 #include "pch.h"
-#include "MemReader.h"
-#include "Logger.h"
 
+#include <cstring>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
-#include <cctype>
 #include <vector>
+#include <chrono>
+
+#include "MemReader.h"
+#include "Logger.h"
+#include "Constants.h"
 
 // Singleton Instance
 MemReader& MemReader::getInstance() {
@@ -43,125 +46,220 @@ void MemReader::initialize() {
     Logger::getInstance().log("MemReader initialized with base address: " + addressToHex(baseAddress_));
 }
 
-// Helper to convert a string to its hexadecimal representation
-std::string stringToHex(const std::string& input) {
-    std::ostringstream hexStream;
-    hexStream << std::hex << std::setfill('0');
-    for (unsigned char c : input) {
-        hexStream << std::setw(2) << static_cast<int>(c);
-    }
-    return hexStream.str();
-}
-
 // Helper to validate server name
-bool isValid(const std::string& str) {
-    // Check that string only contains valid ASCII characters
-    for (char c : str) {
-        if (c != '\0' && (static_cast<unsigned char>(c) < 32 || static_cast<unsigned char>(c) > 125)) {
-            return false;
+static bool isValid(const std::string& s) {
+    auto pos = s.find('\0');
+    // must have at least one ASCII before the NUL, and at least one NUL
+    if (pos == std::string::npos || pos == 0) return false;
+
+    // all bytes before pos must be printable ASCII
+    if (!std::all_of(s.begin(), s.begin() + pos,
+        [](unsigned char c) { return c >= 32 && c <= 125; }))
+        return false;
+
+    // all bytes from pos to end must be NUL
+    if (!std::all_of(s.begin() + pos, s.end(),
+        [](unsigned char c) { return c == '\0'; }))
+        return false;
+
+    return true;
+}
+
+// Helper to convert a byte buffer to a hex string
+static std::string bufferToHex(const std::vector<uint8_t>& buf) {
+    std::ostringstream oss;
+    for (uint8_t b : buf) {
+        oss << std::hex << std::setw(2) << std::setfill('0')
+            << std::uppercase << static_cast<int>(b);
+    }
+    return oss.str();
+}
+
+// Hex-dump logging helper
+static void logHexDump(
+    const char* fnName,
+    uintptr_t addr,
+    const std::vector<uint8_t>& buf,
+    const char* suffix = nullptr
+) {
+    std::ostringstream oss;
+    oss << fnName << "() @ " << addressToHex(addr)
+        << " [" << std::dec << buf.size() << " bytes]";
+    if (suffix) {
+        oss << " " << suffix;
+    }
+    oss << ": " << bufferToHex(buf);
+    Logger::getInstance().log(oss.str());
+}
+
+static bool safeMemcpy(void* dst, const void* src, size_t bytes) {
+    __try
+    {
+        std::memcpy(dst, src, bytes);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;        // access violation, guard page, etc.
+    }
+}
+
+// Read raw bytes at a specific memory offset
+std::vector<uint8_t> MemReader::readRawBytesAtAddress(
+    bool        relative,
+    uintptr_t   offset,
+    size_t      size,
+    const char* callerName
+) {
+    const uintptr_t targetAddress = relative ? (baseAddress_ + offset) : offset;
+    std::vector<uint8_t> buffer(size);
+
+    if (!safeMemcpy(buffer.data(),
+        reinterpret_cast<const void*>(targetAddress),
+        size))
+    {
+        return {};   // copy failed – return an empty vector
+    }
+
+    if (LOG_MEMORY_VALUES && callerName)
+    {
+        logHexDump(callerName, targetAddress, buffer);
+    }
+    return buffer;
+}
+
+
+
+// Search process memory for a pattern and return address, value
+std::tuple<uintptr_t, std::string>
+MemReader::searchMemoryRaw(
+    const std::vector<uint8_t>& pattern,
+    size_t readOffset,
+    size_t readSize,
+    const char* callerName
+) {
+    // Start timing
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    // Guard against empty pattern
+    if (pattern.empty()) {
+        Logger::getInstance().log("Empty pattern");
+        return { 0, {} };
+    }
+
+    // Precompute KMP "lps" array
+    std::vector<size_t> lps(pattern.size(), 0);
+    for (size_t i = 1, len = 0; i < pattern.size(); ) {
+        if (pattern[i] == pattern[len]) {
+            lps[i++] = ++len;
+        }
+        else if (len > 0) {
+            len = lps[len - 1];
+        }
+        else {
+            lps[i++] = 0;
         }
     }
 
-    // Ensure there's at least one non-null character
-    return std::any_of(str.begin(), str.end(), [](char c) { return c != '\0'; });
-}
+    // Address bounds
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    uintptr_t addr = reinterpret_cast<uintptr_t>(si.lpMinimumApplicationAddress);
+    uintptr_t end = reinterpret_cast<uintptr_t>(si.lpMaximumApplicationAddress);
 
-// Read a string at a specific memory offset
-std::string MemReader::readStringAtAddress(bool relative,
-    uintptr_t offset,
-    size_t size,
-    const std::string& label,
-    bool truncateAtNull)
-{
-    // Conditionally use baseAddress
-    uintptr_t targetAddress = relative ? (baseAddress_ + offset) : offset;
-    Logger::getInstance().log(
-        "Looking up " + label + " at " + addressToHex(targetAddress)
-        + " (offset +" + addressToHex(offset)
-        + ", size " + std::to_string(size) + "): ",
-        false
-    );
+    const size_t CHUNK_SIZE = 1 * 1024 * 1024; // 1 MB
+    const size_t minRegionSize = pattern.size() + readOffset + readSize;
+    size_t totalBytesRead = 0;
 
-    // Read raw characters from memory
-    const char* src = reinterpret_cast<const char*>(targetAddress);
-    std::string result(src, size);
-
-    Logger::getInstance().log(stringToHex(result));
-
-    // Conditionally truncate at the first null terminator
-    if (truncateAtNull) {
-        size_t nullPos = result.find('\0');
-        if (nullPos != std::string::npos) {
-            result.erase(nullPos);
-        }
-    }
-
-    return result;
-}
-
-// Search process memory for a string and return address, value
-std::tuple<uintptr_t, std::string> MemReader::searchMemory(const std::string& searchString, size_t offset, size_t size, const std::string& label, bool truncateAtNull) {
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-
-    uintptr_t startAddress = reinterpret_cast<uintptr_t>(sysInfo.lpMinimumApplicationAddress);
-    uintptr_t endAddress = reinterpret_cast<uintptr_t>(sysInfo.lpMaximumApplicationAddress);
-    uintptr_t currentAddress = startAddress;
-
-    Logger::getInstance().log("Searching for " + label + " with pattern " + stringToHex(searchString));
-
-    while (currentAddress < endAddress) {
+    while (addr < end) {
         MEMORY_BASIC_INFORMATION mbi;
-        if (VirtualQuery(reinterpret_cast<LPCVOID>(currentAddress), &mbi, sizeof(mbi)) == 0) {
+        if (VirtualQuery(reinterpret_cast<LPCVOID>(addr), &mbi, sizeof(mbi)) == 0)
             break;
+
+        // Tight filter: only private, committed, exact RW, no guards, and large enough
+        if (mbi.State != MEM_COMMIT ||
+            mbi.Type != MEM_PRIVATE ||
+            mbi.Protect != PAGE_READWRITE ||
+            (mbi.Protect & PAGE_GUARD) ||
+            mbi.RegionSize < minRegionSize)
+        {
+            addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+            continue;
         }
 
-        if (mbi.State == MEM_COMMIT && mbi.Protect == PAGE_READWRITE) {
-            std::vector<char> buffer(mbi.RegionSize);
-            SIZE_T bytesRead = 0;
+        size_t regionSize = mbi.RegionSize;
 
-            if (ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<LPCVOID>(mbi.BaseAddress),
-                buffer.data(), mbi.RegionSize, &bytesRead))
-            {
-                std::string memoryChunk(buffer.data(), bytesRead);
-                size_t position = 0;
+        // Read in sliding chunks with overlap for pattern boundary
+        for (size_t regionOff = 0; regionOff < regionSize; regionOff += CHUNK_SIZE) {
+            size_t bytesLeft = regionSize - regionOff;
+            size_t toRead = std::min<size_t>(CHUNK_SIZE + pattern.size() - 1, bytesLeft);
 
-                while ((position = memoryChunk.find(searchString, position)) != std::string::npos) {
-                    uintptr_t foundAddress = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + position;
+            auto chunk = readRawBytesAtAddress(false, addr + regionOff, toRead);
+            totalBytesRead += chunk.size();
+            if (chunk.empty()) break;
 
-                    Logger::getInstance().log("Match at address " + addressToHex(foundAddress));
+            // KMP search within this chunk
+            size_t R = chunk.size(), P = pattern.size();
+            size_t i = 0, j = 0;
+            while (i < R) {
+                if (chunk[i] == pattern[j]) {
+                    ++i; ++j;
+                    if (j == P) {
+                        uintptr_t foundAddr = addr + regionOff + (i - j);
+                        uintptr_t blobAddr = foundAddr + readOffset;
 
-                    // Ensure we have enough room for offset + size
-                    if (foundAddress + offset + size <= reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize) {
-                        std::string extractedData(buffer.data() + position + offset, size);
+                        if (blobAddr + readSize <= addr + regionSize) {
+                            auto blob = readRawBytesAtAddress(false, blobAddr, readSize);
+                            totalBytesRead += blob.size();
+                            std::string candidate(
+                                reinterpret_cast<const char*>(blob.data()),
+                                blob.size()
+                            );
 
-                        Logger::getInstance().log("Value at address " + addressToHex(foundAddress + offset)
-                            + " (offset +" + addressToHex(offset) + ", size " + std::to_string(size) + ") : " + stringToHex(extractedData));
-
-                        if (isValid(extractedData)) {
-                            Logger::getInstance().log("Valid occurrence found");
-
-                            // Conditionally truncate at the first null terminator
-                            if (truncateAtNull) {
-                                size_t nullPos = extractedData.find('\0');
-                                if (nullPos != std::string::npos) {
-                                    extractedData.erase(nullPos);
+                            if (isValid(candidate)) {
+                                if (LOG_MEMORY_VALUES && callerName) {
+                                    logHexDump(callerName, foundAddr, blob, "valid");
                                 }
-                            }
 
-                            return { foundAddress, extractedData };
+                                // Log bytes read + elapsed time
+                                {
+                                    double mb = totalBytesRead / (1024.0 * 1024.0);
+                                    auto t_end = std::chrono::high_resolution_clock::now();
+                                    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        t_end - t_start
+                                    ).count();
+
+                                    std::ostringstream oss;
+                                    oss << "Read " << mb << " MB, "
+                                        << "Time elapsed: " << elapsed_ms << " ms";
+                                    Logger::getInstance().log(oss.str());
+                                }
+
+                                // Truncate at NUL
+                                if (auto pos = candidate.find('\0'); pos != std::string::npos) {
+                                    candidate.resize(pos);
+                                }
+
+                                return { foundAddr, candidate };
+                            }
                         }
+
+                        j = lps[j - 1];
                     }
-                    // Move past this occurrence
-                    position += searchString.length();
+                }
+                else if (j > 0) {
+                    j = lps[j - 1];
+                }
+                else {
+                    ++i;
                 }
             }
         }
-        // Move on to the next region
-        currentAddress = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+
+        addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + regionSize;
     }
 
-    // Pattern not found
     Logger::getInstance().log("Pattern not found");
-    return { 0, "Unknown" };
+
+    return { 0, {} };
 }

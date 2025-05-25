@@ -2,6 +2,7 @@
 // dllmain.cpp
 
 #include "pch.h"
+
 #include "Plugin.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule,
@@ -9,13 +10,14 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     LPVOID lpReserved) {
     switch (ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
-        Plugin::getInstance().initialize();
+        DisableThreadLibraryCalls(hModule);
         break;
+
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
         break;
+
     case DLL_PROCESS_DETACH:
-        Plugin::getInstance().shutdown();
         break;
     }
     return TRUE;
