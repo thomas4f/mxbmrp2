@@ -118,7 +118,7 @@ std::vector<uint8_t> MemReader::readRawBytesAtAddress(
         reinterpret_cast<const void*>(targetAddress),
         size))
     {
-        return {};   // copy failed – return an empty vector
+        return {};
     }
 
     if (LOG_MEMORY_VALUES && callerName)
@@ -143,7 +143,7 @@ MemReader::searchMemoryRaw(
 
     // Guard against empty pattern
     if (pattern.empty()) {
-        Logger::getInstance().log("Empty pattern");
+        Logger::getInstance().log(std::string(callerName) + "Empty pattern");
         return { 0, {} };
     }
 
@@ -183,7 +183,7 @@ MemReader::searchMemoryRaw(
             (mbi.Protect & PAGE_GUARD) ||
             mbi.RegionSize < minRegionSize)
         {
-            addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+            addr = (uintptr_t)mbi.BaseAddress + mbi.RegionSize;
             continue;
         }
 
@@ -259,7 +259,7 @@ MemReader::searchMemoryRaw(
         addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + regionSize;
     }
 
-    Logger::getInstance().log("Pattern not found");
+    Logger::getInstance().log(std::string(callerName) + "Pattern not found");
 
     return { 0, {} };
 }

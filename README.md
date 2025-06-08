@@ -12,7 +12,7 @@ _This plugin is in early development and may contain bugs or incomplete features
 
 ## Installation
 
-Download the latest plugin package (e.g., `mxbmrp2-<verion>.zip`, **not** the source code) from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page and extract the contents to your MX Bikes plugins folder, typically located at:`C:\Program Files (x86)\Steam\steamapps\common\MX Bikes\plugins\`).
+Download the latest plugin package (e.g., `mxbmrp2-<verion>.zip`, **not** the source code) from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page and extract the contents to your MX Bikes plugins folder, typically located at: `%ProgramFiles(x86)%\Steam\steamapps\common\MX Bikes\plugins\`).
 
 Your directory should look like this:
 
@@ -26,8 +26,8 @@ MX Bikes\
     │   mxbmrp2.dlo
     │
     └───mxbmrp2_data\
+			Enter Sansman Italic.fnt
             FontFix_CqMono.fnt
-            mxbmrp2.ini
 ```
 
 For additional installation help, see the below video:
@@ -36,7 +36,7 @@ https://github.com/user-attachments/assets/5c409833-6a4a-4364-a203-b3dc4c76e45c
 
 ## Basic configuration
 
-Optionally, you can customize the `mxbmrp2.ini` configuration file to suit your preferences.
+Optionally, you can customize `mxbmrp2.ini` in your MX Bikes profile directory (`%USERPROFILE%\Documents\Piboso\MX Bikes\`) to suit your preferences.
 
 ### Available fields 
 Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
@@ -56,13 +56,15 @@ Below is a brief description of the available fields within the `Draw configurat
 | server_name         | thomas4f                          |                                   |
 | server_password     | verySecret                        |                                   |
 | server_location     | Europe                            | The server location as indicated by the administrator. | 
+| server_ping         | 147 ms                            | The response time (ping) when racing online. |
 | server_clients      | 12/24                             | The number of players connected to the server. |
-| server_ping         | 147 ms                            | The reponse time (ping) when racing online. |
 | event_type          | Race                              |                                   |
 | session_type        | Warmup                            |                                   |
 | session_state       | In progress                       |                                   |
 | conditions          | Clear                             |                                   |
 | air_temperature     | 20°C                              |                                   |
+| combo_time          | 00h 12m                           | Track time on the current bike+track combination |
+| total_time          | 85h 50m                           | Total track time across all combinations |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
@@ -100,6 +102,11 @@ To generate additional fonts, you can use the `fontgen` utility provided by PiBo
 
 ### Memory reading
 The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but let me know if you run into issues. 
+
+### Time tracking
+The plugin tracks your actual on-track time, reporting both your "combo" time (i.e. time spent on a specific track with a specific bike) and your cumulative total time across all tracks and bikes.
+
+To reset the counter, remove `mxbmrp2.dat` from your MX Bikes profile directory.
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.

@@ -37,6 +37,8 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"session_state", {ConfigType::BOOL, false}},
     {"conditions", {ConfigType::BOOL, false}},
     {"air_temperature", {ConfigType::BOOL, false}},
+    {"combo_time", {ConfigType::BOOL, false}},
+    {"total_time", {ConfigType::BOOL, true}},
 
     // GUI configuration
     {"default_enabled", {ConfigType::BOOL, true}},

@@ -180,6 +180,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Plugin.h" />
     <ClInclude Include="PluginHelpers.h" />
+    <ClInclude Include="timeTracker.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConfigManager.cpp" />
@@ -197,6 +198,7 @@
     </ClCompile>
     <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="PluginHelpers.cpp" />
+    <ClCompile Include="timeTracker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

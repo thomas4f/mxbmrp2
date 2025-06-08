@@ -77,6 +77,7 @@ private:
     std::string playerActivity_ = DEFAULT_PLAYER_ACTIVITY;
     int eventType_ = -1;
     std::string trackID_ = "";
+    std::string bikeID_ = "";
     std::string remoteServerIPv6Address_ = "";
     uintptr_t remoteServerIPv6AddressMemoryAddress_ = 0;
     std::string serverName_ = "";

@@ -16,6 +16,7 @@
 #include "MemReader.h"
 #include "MemReaderHelpers.h"
 #include "KeyPressHandler.h"
+#include "timeTracker.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -58,6 +59,9 @@ void Plugin::onStartup(const std::string& savePath) {
 	// Initialize KeyPressHandler with the toggleDisplay callback
 	keyPressHandler_ = std::make_unique<KeyPressHandler>([this]() { this->toggleDisplay(); }, HOTKEY);
 
+	// timeTracker
+	TimeTracker::getInstance().initialize(std::filesystem::path(savePath) / TIME_TRACKER_FILE);
+
 	// Start the periodic task thread
 	runPeriodicTask_ = true;
 	periodicTaskThread_ = std::thread(&Plugin::periodicTaskLoop, this);
@@ -71,9 +75,14 @@ void Plugin::onShutdown() {
 	keyPressHandler_.reset();
 	runPeriodicTask_ = false;
 
-
 	if (periodicTaskThread_.joinable())
 		periodicTaskThread_.join();
+
+	// Catch ALT-F4 (since onRunStop/onRunDeinit isn't called then)
+	if (!bikeID_.empty() && !trackID_.empty()) {
+		TimeTracker::getInstance().endRun(trackID_, bikeID_);
+		TimeTracker::getInstance().save();
+	}
 }
 
 // Periodic tasks
@@ -91,11 +100,17 @@ void Plugin::periodicTaskLoop() {
 			}
 			if (connectionType_ == "Host" || connectionType_ == "Client") {
 				serverClients_ = MemReaderHelpers::getServerClientsCount();
+				
 				updateDataKeys({
-					{"server_ping",    serverPing_},
+					{"server_ping", serverPing_},
 					{"server_clients", serverClients_ + "/" + serverClientsMax_}
-					});
+				});
 			}
+
+			updateDataKeys({
+				{"combo_time", TimeTracker::getInstance().getCurrentComboTime()},
+				{"total_time", TimeTracker::getInstance().getTotalTime()}
+			});
 		}
 		std::this_thread::sleep_for(
 			std::chrono::milliseconds(PERIODIC_TASK_INTERVAL)
@@ -167,7 +182,9 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
 	{"session_type", "Session Type"},
 	{"session_state", "Session State"},
 	{"conditions", "Conditions"},
-	{"air_temperature", "Air Temperature"}
+	{"air_temperature", "Air Temperature"},
+	{"combo_time", "Combo Track Time"},
+	{"total_time", "Total Track Time"}
 };
 
 // stateChange
@@ -186,6 +203,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
 
 	eventType_ = eventData.m_iType;
 	trackID_ = eventData.m_szTrackID;
+	bikeID_ = eventData.m_szBikeID;
 
 	// Should not have changed since last onracesession ... 
 	//Logger::getInstance().log(playerActivity_);
@@ -208,6 +226,8 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
 	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
 	playerActivity_ = "On Track";
+	TimeTracker::getInstance().startRun(trackID_, bikeID_);
+
 	Logger::getInstance().log(playerActivity_);
 
 	updateDataKeys({
@@ -225,6 +245,7 @@ void Plugin::onRunDeinit() {
 
 	playerActivity_ = "In Pits";
 	Logger::getInstance().log(playerActivity_);
+	TimeTracker::getInstance().endRun(trackID_, bikeID_);
 }
 
 // RaceSession
@@ -260,10 +281,9 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 				serverClientsMax_ = "?";
 			}
 			else { // Client connected normally
-				std::tie(
-					remoteServerIPv6AddressMemoryAddress_,
-					serverName_
-				) = MemReaderHelpers::getRemoteServerNameAndAddress(remoteServerSocketAddress_);
+				std::tie(remoteServerIPv6AddressMemoryAddress_, serverName_) =
+					MemReaderHelpers::getRemoteServerNameAndAddress(remoteServerSocketAddress_);
+				if (serverName_.empty()) serverName_ = "Unknown";
 
 				serverLocation_ = MemReaderHelpers::getRemoteServerLocation(remoteServerIPv6AddressMemoryAddress_);
 				serverClientsMax_ = MemReaderHelpers::getRemoteServerClientsMax(remoteServerIPv6AddressMemoryAddress_);
@@ -331,11 +351,14 @@ void Plugin::onRaceRemoveEntry(const SPluginsRaceRemoveEntry_t& raceRemoveEntry)
 // EventDeinit
 void Plugin::onEventDeinit() {
 	std::lock_guard<std::mutex> lk(mutex_);
-	Logger::getInstance().log(std::string(__func__) + " handler triggered");
+	Logger::getInstance().log(std::string(__func__) + " handler triggered\n");
+
+	TimeTracker::getInstance().save();
 
 	playerActivity_ = DEFAULT_PLAYER_ACTIVITY;
 	eventType_ = -1;
 	trackID_.clear();
+	bikeID_.clear();
 	remoteServerIPv6Address_.clear();
 	remoteServerIPv6AddressMemoryAddress_ = 0;
 	serverName_.clear();

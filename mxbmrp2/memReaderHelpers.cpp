@@ -119,8 +119,9 @@ namespace MemReaderHelpers {
         );
 
         // All zeroes, not online
-        if (std::all_of(raw.begin(), raw.end(), [](auto b) { return b == 0; }))
+        if (std::all_of(raw.begin(), raw.end(), [](auto b) { return b == 0; })) {
             return {};
+        }
 
         // Not implemented yet
         if (raw[22] != 0xFF || raw[23] != 0xFF) {

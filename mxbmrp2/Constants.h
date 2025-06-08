@@ -7,11 +7,13 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.9";
-inline constexpr const char* HOST_VERSION = "MX Bikes beta20";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.10";
+inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
 inline const std::filesystem::path CONFIG_FILE = "mxbmrp2.ini";
+inline const std::filesystem::path TIME_TRACKER_FILE = "mxbmrp2.dat";
+
 inline constexpr UINT HOTKEY = 'R';
 inline constexpr float LINE_HEIGHT_MULTIPLIER = 1.1f;
 inline constexpr size_t MAX_STRING_LENGTH = 48;
@@ -67,6 +69,8 @@ session_type={{session_type}}
 session_state={{session_state}}
 conditions={{conditions}}
 air_temperature={{air_temperature}}
+combo_time={{combo_time}}
+total_time={{total_time}}
 
 # HUD visibility and placement
 default_enabled={{default_enabled}}
