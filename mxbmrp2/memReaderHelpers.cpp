@@ -92,7 +92,7 @@ namespace MemReaderHelpers {
     }
 
     // getLocalServerClientsMax
-    std::string getLocalServerClientsMax() {
+    int getLocalServerClientsMax() {
         // Read raw bytes directly at the module-relative offset
         auto raw = memReader.readRawBytesAtAddress(
             true,
@@ -102,11 +102,11 @@ namespace MemReaderHelpers {
         );
 
         if (raw.empty()) {
-            return "0";
+            return 0;
         }
 
         // The first byte is your client count
-        return std::to_string(raw[0]);
+        return raw[0];
     }
 
     // getRemoteServerSocketAddress
@@ -184,7 +184,7 @@ namespace MemReaderHelpers {
     }
 
     // getRemoteServerClientsMax
-    std::string getRemoteServerClientsMax(uintptr_t remoteIPv6MemoryAddress) {
+    int getRemoteServerClientsMax(uintptr_t remoteIPv6MemoryAddress) {
         auto raw = memReader.readRawBytesAtAddress(
             false,
             configManager.getValue<unsigned long>("remote_server_clients_max_offset") + remoteIPv6MemoryAddress,
@@ -193,10 +193,10 @@ namespace MemReaderHelpers {
         );
 
         if (raw.empty()) {
-            return "?";
+            return 0;
         }
 
-        return std::to_string(raw[0]);
+        return raw[0];
     }
 
     // getRemoteServerPing
@@ -216,7 +216,7 @@ namespace MemReaderHelpers {
     }
 
     // getServerClientsCount
-    std::string getServerClientsCount() {
+    int getServerClientsCount() {
         auto raw = memReader.readRawBytesAtAddress(
             true,
             configManager.getValue<unsigned long>("server_clients_offset"),
@@ -224,7 +224,7 @@ namespace MemReaderHelpers {
         );
 
         if (raw.empty()) {
-            return "?";
+            return 0;
         }
 
         int count = 1; // Local player is always present
@@ -233,6 +233,6 @@ namespace MemReaderHelpers {
                 ++count;
             }
         }
-        return std::to_string(count);
+        return count;
     }
 }

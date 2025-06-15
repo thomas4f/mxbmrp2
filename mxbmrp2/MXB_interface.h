@@ -70,6 +70,13 @@ extern "C" {
         int m_iSessionLength;
     } SPluginsRaceSessionState_t;
 
+    typedef struct {
+        int   m_iType;
+        char  m_szName[100];
+        char  m_szTrackName[100];
+        float m_fTrackLength;
+    } SPluginsRaceEvent_t;
+
     // RaceAddEntry
     typedef struct {
         int m_iRaceNum;
@@ -101,6 +108,7 @@ extern "C" {
     __declspec(dllexport) void RunDeinit();
     __declspec(dllexport) void RaceSession(void* _pData, int _iDataSize);
     __declspec(dllexport) void RaceSessionState(void* _pData, int _iDataSize);
+    __declspec(dllexport) void RaceEvent(void* _pData, int _iDataSize);
     __declspec(dllexport) void RaceAddEntry(void* _pData, int _iDataSize);
     __declspec(dllexport) void RaceRemoveEntry(void* _pData, int _iDataSize);
     __declspec(dllexport) void RunStart();

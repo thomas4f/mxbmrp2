@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.10";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.11";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
@@ -20,6 +20,9 @@ inline constexpr size_t MAX_STRING_LENGTH = 48;
 inline constexpr int PERIODIC_TASK_INTERVAL = 1000;
 inline constexpr const char* DEFAULT_PLAYER_ACTIVITY = "In Menus";
 inline constexpr bool LOG_MEMORY_VALUES = true;
+
+// Discord RP
+inline constexpr uint64_t DISCORD_APP_ID = 1286928297288011817ULL;
 
 // MXB_interface
 inline constexpr const char* MOD_ID = "mxbikes";
@@ -71,6 +74,7 @@ conditions={{conditions}}
 air_temperature={{air_temperature}}
 combo_time={{combo_time}}
 total_time={{total_time}}
+discord_status={{discord_status}}
 
 # HUD visibility and placement
 default_enabled={{default_enabled}}
@@ -82,6 +86,9 @@ font_name={{font_name}}
 font_size={{font_size}}
 font_color={{font_color}}
 background_color={{background_color}}
+
+# Discord Rich Presence
+enable_discord_rich_presence={{enable_discord_rich_presence}}
 
 # Memory addresses (don't touch!)
 local_server_name_offset={{local_server_name_offset}}

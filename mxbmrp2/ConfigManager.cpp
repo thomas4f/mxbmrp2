@@ -39,6 +39,7 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"air_temperature", {ConfigType::BOOL, false}},
     {"combo_time", {ConfigType::BOOL, false}},
     {"total_time", {ConfigType::BOOL, true}},
+    {"discord_status", { ConfigType::BOOL, false }},
 
     // GUI configuration
     {"default_enabled", {ConfigType::BOOL, true}},
@@ -49,6 +50,9 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"font_size", {ConfigType::FLOAT, 0.025f}},
     {"font_color", {ConfigType::ULONG, 0xFFFFFFFFUL}},
     {"background_color", {ConfigType::ULONG, 0x7F000000UL}},
+
+    // Discord integration
+    { "enable_discord_rich_presence", {ConfigType::BOOL, false }},
 
     // Memory configuration
     {"local_server_name_offset",{ConfigType::ULONG,0x9D6768UL}},

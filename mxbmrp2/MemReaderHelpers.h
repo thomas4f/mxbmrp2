@@ -27,12 +27,12 @@ namespace MemReaderHelpers {
     std::string getServerTrackID();
     std::string getLocalServerPassword();
     std::string getLocalServerLocation();
-    std::string getLocalServerClientsMax();
+    int getLocalServerClientsMax();
     ByteBuf getRemoteServerSocketAddress();
     std::tuple<uintptr_t, std::string> getRemoteServerNameAndAddress(const ByteBuf& remoteIPv6Hex);
     std::string getRemoteServerPassword();
     std::string getRemoteServerLocation(uintptr_t remoteIPv6MemoryAddress);
-    std::string getRemoteServerClientsMax(uintptr_t remoteIPv6MemoryAddress);
+    int getRemoteServerClientsMax(uintptr_t remoteIPv6MemoryAddress);
     std::string getRemoteServerPing();
-    std::string getServerClientsCount();
+    int getServerClientsCount();
 }

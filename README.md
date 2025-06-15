@@ -12,7 +12,7 @@ _This plugin is in early development and may contain bugs or incomplete features
 
 ## Installation
 
-Download the latest plugin package (e.g., `mxbmrp2-<verion>.zip`, **not** the source code) from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page and extract the contents to your MX Bikes plugins folder, typically located at: `%ProgramFiles(x86)%\Steam\steamapps\common\MX Bikes\plugins\`).
+Download the latest plugin package (e.g., `mxbmrp2-<version>.zip`, **not** the source code) from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page and extract the contents to your MX Bikes plugins folder, typically located at: `%ProgramFiles(x86)%\Steam\steamapps\common\MX Bikes\plugins\`).
 
 Your directory should look like this:
 
@@ -65,6 +65,7 @@ Below is a brief description of the available fields within the `Draw configurat
 | air_temperature     | 20°C                              |                                   |
 | combo_time          | 00h 12m                           | Track time on the current bike+track combination |
 | total_time          | 85h 50m                           | Total track time across all combinations |
+| discord_status      | Connected                         | Indicates the status of Discord Rich Presence |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
@@ -98,19 +99,23 @@ Note that unlike the other settings, **changing the font family requires a resta
 
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
-## Final notes
-
-### Memory reading
-The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but let me know if you run into issues. 
-
 ### Time tracking
 The plugin tracks your actual on-track time, reporting both your "combo" time (i.e. time spent on a specific track with a specific bike) and your cumulative total time across all tracks and bikes.
 
 To reset the counter, remove `mxbmrp2.dat` from your MX Bikes profile directory.
+
+### Discord Rich Presence
+To broadcast your in-game status such as current track, session type, party size, and server name, set `enable_discord_rich_presence=true` in the configuration file.
+
+## Final notes
+
+### Memory reading
+The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but it has been noted that reading the server_name may fail.
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
  - Enter Sansman Font designed by Digital Graphic Labs.
  - @TokisFFS and everyone who contributed to early testing and feedback.
+ - STARS for his excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out his project.
  

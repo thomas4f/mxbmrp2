@@ -62,9 +62,17 @@ void Plugin::onStartup(const std::string& savePath) {
 	// timeTracker
 	TimeTracker::getInstance().initialize(std::filesystem::path(savePath) / TIME_TRACKER_FILE);
 
+	// Initialize Discord Core
+	useDiscordRichPresence_ = configManager_.getValue<bool>("enable_discord_rich_presence");
+	if (useDiscordRichPresence_) {
+		discordManager_.initialize(DISCORD_APP_ID);
+	}
+
 	// Start the periodic task thread
 	runPeriodicTask_ = true;
 	periodicTaskThread_ = std::thread(&Plugin::periodicTaskLoop, this);
+
+	Logger::getInstance().log(playerActivity_);
 }
 
 // Shutdown the plugin
@@ -83,13 +91,16 @@ void Plugin::onShutdown() {
 		TimeTracker::getInstance().endRun(trackID_, bikeID_);
 		TimeTracker::getInstance().save();
 	}
+
+	// Discord
+	if (useDiscordRichPresence_) {
+		discordManager_.finalize();
+	}
 }
 
 // Periodic tasks
 void Plugin::periodicTaskLoop() {
-
-	Logger::getInstance().log("Periodic task thread started with interval: " + std::to_string(PERIODIC_TASK_INTERVAL) + " ms"
-	);
+	Logger::getInstance().log("Periodic task thread started with interval: " + std::to_string(PERIODIC_TASK_INTERVAL) + " ms");
 
 	while (runPeriodicTask_) {
 		{
@@ -103,18 +114,44 @@ void Plugin::periodicTaskLoop() {
 				
 				updateDataKeys({
 					{"server_ping", serverPing_},
-					{"server_clients", serverClients_ + "/" + serverClientsMax_}
+					{"server_clients", std::to_string(serverClients_) + "/" + std::to_string(serverClientsMax_)}
 				});
 			}
 
 			updateDataKeys({
 				{"combo_time", TimeTracker::getInstance().getCurrentComboTime()},
-				{"total_time", TimeTracker::getInstance().getTotalTime()}
+				{"total_time", TimeTracker::getInstance().getTotalTime()},
+				{"discord_status", discordManager_.getConnectionStateString()}
 			});
 		}
-		std::this_thread::sleep_for(
-			std::chrono::milliseconds(PERIODIC_TASK_INTERVAL)
-		);
+
+		// Discord
+		if (useDiscordRichPresence_) {
+			std::string details = "";
+			std::string state = "";
+			int partySize = 0;
+			int partyMax = 0;
+
+			if (connectionType_ == "Host" || connectionType_ == "Client") {
+				details = allDataKeys_["track_name"] + " (" + allDataKeys_["session_type"] + " : " + allDataKeys_["session_state"] + ")";
+				state = allDataKeys_["server_name"];
+				partySize = serverClients_;
+				partyMax = serverClientsMax_;
+			}
+			else if (allDataKeys_["event_type"] == "Testing") {
+				details = "Testing: " + allDataKeys_["track_name"];
+			}
+			else if (playerActivity_ == "In Menus") {
+				details = "In Menus";
+			}
+			else {
+				details = "Unkown";
+			}
+
+			discordManager_.tick(details, state, partySize, partyMax);
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(PERIODIC_TASK_INTERVAL));
 	}
 
 	Logger::getInstance().log("Periodic task thread stopped");
@@ -184,7 +221,8 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
 	{"conditions", "Conditions"},
 	{"air_temperature", "Air Temperature"},
 	{"combo_time", "Combo Track Time"},
-	{"total_time", "Total Track Time"}
+	{"total_time", "Total Track Time"},
+	{"discord_status", "Discord RP Status"}
 };
 
 // stateChange
@@ -201,8 +239,7 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
 	std::lock_guard<std::mutex> lk(mutex_);
 	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-	eventType_ = eventData.m_iType;
-	trackID_ = eventData.m_szTrackID;
+	trackID_ = eventData.m_szTrackID;	
 	bikeID_ = eventData.m_szBikeID;
 
 	// Should not have changed since last onracesession ... 
@@ -214,8 +251,6 @@ void Plugin::onEventInit(const SPluginsBikeEvent_t& eventData) {
 		{"bike_id", eventData.m_szBikeID},
 		{"bike_name", eventData.m_szBikeName},
 		{"track_id", eventData.m_szTrackID},
-		{"track_name", eventData.m_szTrackName},
-		{"track_length", std::to_string(std::lround(eventData.m_fTrackLength)) + " m"},
 		{"event_type", PluginHelpers::getEventType(eventData.m_iType, connectionType_)}
 	});
 }
@@ -231,10 +266,7 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
 	Logger::getInstance().log(playerActivity_);
 
 	updateDataKeys({
-		{"setup_name", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default" },
-		{"session_type", PluginHelpers::getSessionType(eventType_, sessionData.m_iSession)},
-		{"conditions", PluginHelpers::getConditions(sessionData.m_iConditions)},
-		{"air_temperature", std::to_string(std::lround(sessionData.m_fAirTemperature)) + "°C"}
+		{"setup_name", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default" }
 	});
 }
 
@@ -255,6 +287,29 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 
 	playerActivity_ = "In Pits";
 	Logger::getInstance().log(playerActivity_);
+
+	updateDataKeys({
+		{"session_type", PluginHelpers::getSessionType(eventType_, raceSession.m_iSession)},
+		{"session_state", PluginHelpers::getSessionState(raceSession.m_iSessionState)},
+		{"conditions", PluginHelpers::getConditions(raceSession.m_iConditions)},
+		{"air_temperature", std::to_string(std::lround(raceSession.m_fAirTemperature)) + "°C"}
+	});
+}
+
+// RaceSessionState
+void Plugin::onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState) {
+	std::lock_guard<std::mutex> lk(mutex_);
+	Logger::getInstance().log(std::string(__func__) + " handler triggered");
+
+	updateDataKeys({ {"session_state", PluginHelpers::getSessionState(raceSessionState.m_iSessionState)} });
+}
+
+// onRaceEvent
+void Plugin::onRaceEvent(const SPluginsRaceEvent_t& raceEvent) {
+	std::lock_guard<std::mutex> lk(mutex_);
+	Logger::getInstance().log(std::string(__func__) + " handler triggered");
+
+	eventType_ = raceEvent.m_iType;
 
 	// Identify the connection type
 	std::string localServerName = MemReaderHelpers::getLocalServerName();
@@ -277,8 +332,8 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 				serverName_ = connectURIServerName;
 
 				// Can't get data from server list when using connect URI :(
-				serverLocation_ = "?";
-				serverClientsMax_ = "?";
+				serverLocation_ = "Unknown";
+				serverClientsMax_ = 0;
 			}
 			else { // Client connected normally
 				std::tie(remoteServerIPv6AddressMemoryAddress_, serverName_) =
@@ -318,16 +373,10 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 		{"server_password", serverPassword_},
 		{"server_location", serverLocation_},
 		{"connection_type", connectionType_},
-		{"session_state", PluginHelpers::getSessionState(raceSession.m_iSessionState)}
+		{"event_type", PluginHelpers::getEventType(raceEvent.m_iType, connectionType_)},
+		{"track_name", raceEvent.m_szTrackName},
+		{"track_length", std::to_string(std::lround(raceEvent.m_fTrackLength)) + " m"},
 	});
-}
-
-// RaceSessionState
-void Plugin::onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState) {
-	std::lock_guard<std::mutex> lk(mutex_);
-	Logger::getInstance().log(std::string(__func__) + " handler triggered");
-
-	updateDataKeys({ {"session_state", PluginHelpers::getSessionState(raceSessionState.m_iSessionState)} });
 }
 
 // RaceAddEntry
@@ -351,12 +400,12 @@ void Plugin::onRaceRemoveEntry(const SPluginsRaceRemoveEntry_t& raceRemoveEntry)
 // EventDeinit
 void Plugin::onEventDeinit() {
 	std::lock_guard<std::mutex> lk(mutex_);
-	Logger::getInstance().log(std::string(__func__) + " handler triggered\n");
+	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
 	TimeTracker::getInstance().save();
 
 	playerActivity_ = DEFAULT_PLAYER_ACTIVITY;
-	eventType_ = -1;
+	eventType_ = 0;
 	trackID_.clear();
 	bikeID_.clear();
 	remoteServerIPv6Address_.clear();
@@ -366,8 +415,8 @@ void Plugin::onEventDeinit() {
 	connectionType_.clear();
 	serverLocation_.clear();
 	serverPing_.clear();
-	serverClients_.clear();
-	serverClientsMax_.clear();
+	serverClients_ = 0;
+	serverClientsMax_ = 0;
 
 	allDataKeys_.clear();
 	dataKeysToDisplay_.clear();
@@ -391,19 +440,34 @@ void Plugin::onRunStop() {
 void Plugin::toggleDisplay() {
 	std::lock_guard<std::mutex> lk(mutex_);
 
+	// 1) Toggle the HUD on/off
 	displayEnabled_ = !displayEnabled_;
+	Logger::getInstance().log(
+		displayEnabled_ ? "Display enabled." : "Display disabled."
+	);
 
+	// 2) Reload everything from disk
+	configManager_.loadConfig(configPath_);
+	setDisplayConfig();
+
+	// 3) Rebuild display strings if the HUD is on
 	if (displayEnabled_) {
-		Logger::getInstance().log("Display enabled.");
-
-		// Reload configuration and update display settings
-		configManager_.loadConfig(configPath_);
-		setDisplayConfig();
-
-		// Re-populate displayKeysToDisplay_ based on current allDataKeys_
 		updateDataKeys(allDataKeys_);
 	}
-	else {
-		Logger::getInstance().log("Display disabled.");
+
+	// 4) Check for a change in the Discord setting
+	bool newUseDiscordRichPresence = configManager_.getValue<bool>("enable_discord_rich_presence");
+	if (newUseDiscordRichPresence && !useDiscordRichPresence_) {
+		// start it
+		discordManager_.initialize(DISCORD_APP_ID);
+		Logger::getInstance().log("Discord Rich Presence enabled.");
 	}
+	else if (!newUseDiscordRichPresence && useDiscordRichPresence_) {
+		// shut it down
+		discordManager_.finalize();
+		Logger::getInstance().log("Discord Rich Presence disabled.");
+	}
+	// 5) Store the new state
+	useDiscordRichPresence_ = newUseDiscordRichPresence;
 }
+

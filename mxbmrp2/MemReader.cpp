@@ -167,7 +167,7 @@ MemReader::searchMemoryRaw(
     uintptr_t addr = reinterpret_cast<uintptr_t>(si.lpMinimumApplicationAddress);
     uintptr_t end = reinterpret_cast<uintptr_t>(si.lpMaximumApplicationAddress);
 
-    const size_t CHUNK_SIZE = 1 * 1024 * 1024; // 1 MB
+    const size_t CHUNK_SIZE = 8 * 1024 * 1024; // 8 MiB
     const size_t minRegionSize = pattern.size() + readOffset + readSize;
     size_t totalBytesRead = 0;
 

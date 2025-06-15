@@ -37,14 +37,17 @@ void Logger::openLogFile() {
 // Logs a message to the log file
 void Logger::log(const std::string& message, bool newline) {
 	std::lock_guard<std::mutex> lk(mutex_);
-	if (logFile_.is_open()) {
-		logFile_ << message;
-		if (newline) {
-			logFile_ << std::endl;
-		}
-	}
-}
+	if (!logFile_.is_open()) return;
 
+	// get current time
+	auto now = std::chrono::system_clock::now();
+	auto t = std::chrono::system_clock::to_time_t(now);
+	std::tm  tm;
+	localtime_s(&tm, &t);
+
+	logFile_ << std::put_time(&tm, "[%H:%M:%S] ") << message;
+	if (newline) logFile_ << std::endl;
+}
 // Sets the log file name
 void Logger::setLogFileName(const std::filesystem::path& filePath) {
 	std::lock_guard<std::mutex> lk(mutex_);

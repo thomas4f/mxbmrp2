@@ -13,6 +13,7 @@
 #include "MemReader.h"
 #include "KeyPressHandler.h"
 #include "Constants.h"
+#include "DiscordManager.h"
 
 class Plugin {
 public:
@@ -28,6 +29,7 @@ public:
     void onRunDeinit();
     void onRaceSession(const SPluginsRaceSession_t& raceSession);
     void onRaceSessionState(const SPluginsRaceSessionState_t& raceSessionState);
+    void onRaceEvent(const SPluginsRaceEvent_t& raceEvent);
     void onRaceAddEntry(const SPluginsRaceAddEntry_t& raceAddEntry);
     void onRaceRemoveEntry(const SPluginsRaceRemoveEntry_t& raceRemoveEntry);
     void onStateChange(int state);
@@ -38,16 +40,16 @@ public:
     // Method to retrieve the keys to display
     std::vector<std::string> getDisplayKeys();
 
-    // Cached configuration values for Draw
+    // Configuration values for Draw
     struct displayConfig {
-        std::string fontName;
-        float fontSize;
-        float lineHeight;
-        unsigned long fontColor;
-        unsigned long backgroundColor;
-        float positionX;
-        float positionY;
-        float quadWidth;
+        std::string fontName = "";
+        float fontSize = 0.0f;
+        float lineHeight = 0.0f;
+        unsigned long fontColor = 0;
+        unsigned long backgroundColor = 0;
+        float positionX = 0.0f;
+        float positionY = 0.0f;
+        float quadWidth = 0.0f;
     } displayConfig_;
 
 private:
@@ -75,7 +77,7 @@ private:
 
     // Custom data keys
     std::string playerActivity_ = DEFAULT_PLAYER_ACTIVITY;
-    int eventType_ = -1;
+    int eventType_ = 0;
     std::string trackID_ = "";
     std::string bikeID_ = "";
     std::string remoteServerIPv6Address_ = "";
@@ -85,8 +87,8 @@ private:
     std::string connectionType_ = "";
     std::string serverLocation_ = "";
     std::string serverPing_ = "";
-    std::string serverClients_ = "";
-    std::string serverClientsMax_ = "";
+    int serverClients_ = 0;
+    int serverClientsMax_ = 0;
 
     // Stores all key-value pairs of data for processing and display.
     std::unordered_map<std::string, std::string> allDataKeys_;
@@ -107,4 +109,8 @@ private:
 
     // Callback function to toggle display 
     void toggleDisplay();
+
+	// Discord
+    bool useDiscordRichPresence_ = false;
+    DiscordManager discordManager_;
 };

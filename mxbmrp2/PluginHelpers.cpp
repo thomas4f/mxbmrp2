@@ -84,13 +84,16 @@ namespace PluginHelpers {
         static const std::unordered_map<int, std::unordered_map<int, std::string>> sessionStateNames = {
             {1, { // Testing / Open Practice
                 {0, "Waiting"},
-                {1, ""}
+                {1, "Practice"}
+            }},
+            {3, { // Qualify Practice}
+                {0, "Waiting"}
             }},
             {2, { // Race
                 {0, "Waiting"},
                 {1, "Practice"},
                 {2, "Pre-Qualify"},
-                {3, "?"}, // Not Used?
+                {3, "Unknown"}, // Not Used?
                 {4, "Qualify"},
                 {5, "Warmup"},
                 {6, "Race 1"},
@@ -122,7 +125,8 @@ namespace PluginHelpers {
             {64, "Sighting Lap"},
             {256, "Pre-Start"},
             {512, "Race Over"},
-            {1024, "Completed"}
+            {1024, "Completed"},
+            {2048, "Completed"}
         };
 
         auto it = sessionStateNames.find(sessionState);

@@ -171,6 +171,12 @@ __declspec(dllexport) void RaceSessionState(void* _pData, int _iDataSize) {
     Plugin::getInstance().onRaceSessionState(*psRaceSessionState);
 }
 
+// RaceEvent: Called when a race or replay is initialized
+__declspec(dllexport) void RaceEvent(void* _pData, int _iDataSize) {
+    SPluginsRaceEvent_t* psRaceEvent = (SPluginsRaceEvent_t*)_pData;
+    Plugin::getInstance().onRaceEvent(*psRaceEvent);
+}
+
 // RaceAddEntry: Called when a new entry is added to the race
 __declspec(dllexport) void RaceAddEntry(void* _pData, int _iDataSize) {
     SPluginsRaceAddEntry_t* psRaceAddEntry = (SPluginsRaceAddEntry_t*)_pData;
