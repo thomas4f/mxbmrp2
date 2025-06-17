@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.11";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.12";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";

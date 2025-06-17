@@ -28,7 +28,7 @@ public:
         const std::vector<uint8_t>& pattern,
         size_t readOffset,
         size_t readSize,
-        const char* callerName
+        const char* callerName = nullptr
     );
 
     // Destructor

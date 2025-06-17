@@ -58,9 +58,10 @@ static bool isValid(const std::string& s) {
         return false;
 
     // all bytes from pos to end must be NUL
-    if (!std::all_of(s.begin() + pos, s.end(),
-        [](unsigned char c) { return c == '\0'; }))
-        return false;
+	// Disabled this check since non-dedicated servers may have trailing NULs in the result
+    //if (!std::all_of(s.begin() + pos, s.end(),
+    //    [](unsigned char c) { return c == '\0'; }))
+    //    return false;
 
     return true;
 }
@@ -121,33 +122,30 @@ std::vector<uint8_t> MemReader::readRawBytesAtAddress(
         return {};
     }
 
-    if (LOG_MEMORY_VALUES && callerName)
-    {
+    if (LOG_MEMORY_VALUES && callerName) {
         logHexDump(callerName, targetAddress, buffer);
     }
     return buffer;
 }
 
-
-
 // Search process memory for a pattern and return address, value
 std::tuple<uintptr_t, std::string>
 MemReader::searchMemoryRaw(
     const std::vector<uint8_t>& pattern,
-    size_t readOffset,
-    size_t readSize,
+    size_t                      readOffset,
+    size_t                      readSize,
     const char* callerName
 ) {
-    // Start timing
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    // Guard against empty pattern
     if (pattern.empty()) {
-        Logger::getInstance().log(std::string(callerName) + "Empty pattern");
+        if (LOG_MEMORY_VALUES && callerName) {
+                Logger::getInstance().log(std::string(callerName) + " Empty pattern");
+        }
         return { 0, {} };
     }
 
-    // Precompute KMP "lps" array
+    // build KMP lps
     std::vector<size_t> lps(pattern.size(), 0);
     for (size_t i = 1, len = 0; i < pattern.size(); ) {
         if (pattern[i] == pattern[len]) {
@@ -161,7 +159,6 @@ MemReader::searchMemoryRaw(
         }
     }
 
-    // Address bounds
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     uintptr_t addr = reinterpret_cast<uintptr_t>(si.lpMinimumApplicationAddress);
@@ -176,20 +173,17 @@ MemReader::searchMemoryRaw(
         if (VirtualQuery(reinterpret_cast<LPCVOID>(addr), &mbi, sizeof(mbi)) == 0)
             break;
 
-        // Tight filter: only private, committed, exact RW, no guards, and large enough
         if (mbi.State != MEM_COMMIT ||
             mbi.Type != MEM_PRIVATE ||
             mbi.Protect != PAGE_READWRITE ||
             (mbi.Protect & PAGE_GUARD) ||
             mbi.RegionSize < minRegionSize)
         {
-            addr = (uintptr_t)mbi.BaseAddress + mbi.RegionSize;
+            addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
             continue;
         }
 
         size_t regionSize = mbi.RegionSize;
-
-        // Read in sliding chunks with overlap for pattern boundary
         for (size_t regionOff = 0; regionOff < regionSize; regionOff += CHUNK_SIZE) {
             size_t bytesLeft = regionSize - regionOff;
             size_t toRead = std::min<size_t>(CHUNK_SIZE + pattern.size() - 1, bytesLeft);
@@ -198,7 +192,6 @@ MemReader::searchMemoryRaw(
             totalBytesRead += chunk.size();
             if (chunk.empty()) break;
 
-            // KMP search within this chunk
             size_t R = chunk.size(), P = pattern.size();
             size_t i = 0, j = 0;
             while (i < R) {
@@ -211,34 +204,36 @@ MemReader::searchMemoryRaw(
                         if (blobAddr + readSize <= addr + regionSize) {
                             auto blob = readRawBytesAtAddress(false, blobAddr, readSize);
                             totalBytesRead += blob.size();
+
+                            if (LOG_MEMORY_VALUES && callerName) {
+                                logHexDump(callerName, blobAddr, blob, "candidate");
+                            }
+
                             std::string candidate(
                                 reinterpret_cast<const char*>(blob.data()),
-                                blob.size()
+                                static_cast<std::string::size_type>(blob.size())
                             );
 
                             if (isValid(candidate)) {
                                 if (LOG_MEMORY_VALUES && callerName) {
-                                    logHexDump(callerName, foundAddr, blob, "valid");
+                                    logHexDump(callerName, blobAddr, blob, "valid");
                                 }
 
-                                // Log bytes read + elapsed time
-                                {
+                                if (LOG_MEMORY_VALUES && callerName) {
                                     double mb = totalBytesRead / (1024.0 * 1024.0);
                                     auto t_end = std::chrono::high_resolution_clock::now();
-                                    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                                         t_end - t_start
                                     ).count();
 
                                     std::ostringstream oss;
-                                    oss << "Read " << mb << " MB, "
-                                        << "Time elapsed: " << elapsed_ms << " ms";
+                                    oss << "Read " << mb << " MB, Time elapsed: "
+                                        << elapsedMs << " ms";
                                     Logger::getInstance().log(oss.str());
                                 }
 
-                                // Truncate at NUL
-                                if (auto pos = candidate.find('\0'); pos != std::string::npos) {
+                                if (auto pos = candidate.find('\0'); pos != std::string::npos)
                                     candidate.resize(pos);
-                                }
 
                                 return { foundAddr, candidate };
                             }
@@ -259,7 +254,9 @@ MemReader::searchMemoryRaw(
         addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + regionSize;
     }
 
-    Logger::getInstance().log(std::string(callerName) + "Pattern not found");
+    if (LOG_MEMORY_VALUES && callerName) {
+        Logger::getInstance().log(std::string(callerName) + " Pattern not found");
+    }
 
     return { 0, {} };
 }

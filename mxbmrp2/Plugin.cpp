@@ -358,7 +358,7 @@ void Plugin::onRaceEvent(const SPluginsRaceEvent_t& raceEvent) {
 			MemReaderHelpers::getServerCategories()
 		);
 
-		Logger::getInstance().log("connectURIString:\n" + connectURIString);
+		Logger::getInstance().log("connectURIString: " + connectURIString);
 	}
 
 	if (connectionType_ == "Host") {

@@ -6,8 +6,11 @@ A plugin for [MX Bikes](https://mx-bikes.com/) that displays event and server in
 
 MXBMRP2 leverages the game's plugin system and memory reading to display a customizable HUD in-game.
 
-This information can be useful to let people know what bike or server you're on when sharing your screen or streaming, for example.
-
+## Features
+ - Customizable HUD: Select which data fields to display (rider, bike, track, session, etc.) and position them anywhere on the screen.
+ - Time Tracking: Tracks your actual on-track time, reporting both your per-track/bike time and your overall cumulative time, persisted across sessions.
+ - Discord Rich Presence: Optional integration to broadcast your MX Bikes activity directly to Discord.
+ 
 _This plugin is in early development and may contain bugs or incomplete features. If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page. Feature- and/or pull requests are also welcome!_
 
 ## Installation
@@ -27,7 +30,8 @@ MX Bikes\
     │
     └───mxbmrp2_data\
 			Enter Sansman Italic.fnt
-            FontFix_CqMono.fnt
+			discord_game_sdk.dll
+            CQ Mono.fnt
 ```
 
 For additional installation help, see the below video:
@@ -63,9 +67,9 @@ Below is a brief description of the available fields within the `Draw configurat
 | session_state       | In progress                       |                                   |
 | conditions          | Clear                             |                                   |
 | air_temperature     | 20°C                              |                                   |
-| combo_time          | 00h 12m                           | Track time on the current bike+track combination |
-| total_time          | 85h 50m                           | Total track time across all combinations |
-| discord_status      | Connected                         | Indicates the status of Discord Rich Presence |
+| combo_time          | 00h 12m                           | Track time on the current bike/track combination. |
+| total_time          | 85h 50m                           | Total track time across all combinations. |
+| discord_status      | Connected                         | Indicates the status of Discord Rich Presence. |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
@@ -100,7 +104,7 @@ Note that unlike the other settings, **changing the font family requires a resta
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
 ### Time tracking
-The plugin tracks your actual on-track time, reporting both your "combo" time (i.e. time spent on a specific track with a specific bike) and your cumulative total time across all tracks and bikes.
+The plugin tracks your actual on-track time, reporting both your "combo" time (i.e. total time spent on a specific track with a specific bike) and your cumulative total time across all tracks and bikes.
 
 To reset the counter, remove `mxbmrp2.dat` from your MX Bikes profile directory.
 
@@ -117,5 +121,5 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
  - Enter Sansman Font designed by Digital Graphic Labs.
  - @TokisFFS and everyone who contributed to early testing and feedback.
- - STARS for his excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out his project.
+ - STARS for his excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out their project.
  
