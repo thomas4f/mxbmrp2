@@ -106,7 +106,7 @@ To generate additional fonts, you can use the `fontgen` utility provided by PiBo
 ### Time tracking
 The plugin tracks your actual on-track time, reporting both your "combo" time (i.e. total time spent on a specific track with a specific bike) and your cumulative total time across all tracks and bikes.
 
-To reset the counter, remove `mxbmrp2.dat` from your MX Bikes profile directory.
+The recorded times can be viewed in `mxbmrp2-times.csv` in your MX Bikes profile directory (to reset the stats, remove `mxbmrp2.dat`).
 
 ### Discord Rich Presence
 To broadcast your in-game status such as current track, session type, party size, and server name, set `enable_discord_rich_presence=true` in the configuration file.
@@ -121,5 +121,5 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
  - Enter Sansman Font designed by Digital Graphic Labs.
  - @TokisFFS and everyone who contributed to early testing and feedback.
- - STARS for his excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out their project.
+ - STARS for the excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out their project.
  

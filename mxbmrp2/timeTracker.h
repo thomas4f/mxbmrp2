@@ -1,3 +1,4 @@
+
 // timeTracker.h
 
 #pragma once
@@ -7,6 +8,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <ctime>               // for std::time_t
 
 class TimeTracker {
 public:
@@ -47,11 +49,15 @@ private:
 
     void load();
 
-    std::filesystem::path                             _csvPath;
-    mutable std::mutex                                _mtx;
-    ComboKey                                          _activeKey;
-    Clock::time_point                                 _runStart;
-    bool                                              _isRunning{ false };
-    std::unordered_map<ComboKey, Seconds, ComboKeyHash> _comboTotals;
-    Seconds                                           _total{ 0 };
+    std::filesystem::path                                   _csvPath;
+    mutable std::mutex                                      _mtx;
+    ComboKey                                                _activeKey;
+    Clock::time_point                                       _runStart;
+    bool                                                    _isRunning{ false };
+    std::unordered_map<ComboKey, Seconds, ComboKeyHash>     _comboTotals;
+    Seconds                                                 _total{ 0 };
+
+    // NEW: track first and last run timestamps (epoch seconds)
+    std::unordered_map<ComboKey, std::time_t, ComboKeyHash> _firstRun;
+    std::unordered_map<ComboKey, std::time_t, ComboKeyHash> _lastRun;
 };
