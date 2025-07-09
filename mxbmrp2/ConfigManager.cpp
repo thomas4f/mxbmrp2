@@ -35,8 +35,10 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"event_type", {ConfigType::BOOL, false}},
     {"session_type", {ConfigType::BOOL, false}},
     {"session_state", {ConfigType::BOOL, false}},
+    {"session_duration", {ConfigType::BOOL, false}},
     {"conditions", {ConfigType::BOOL, false}},
     {"air_temperature", {ConfigType::BOOL, false}},
+    {"track_deformation",{ConfigType::BOOL, false}},
     {"combo_time", {ConfigType::BOOL, false}},
     {"total_time", {ConfigType::BOOL, true}},
     {"discord_status", { ConfigType::BOOL, false }},
@@ -67,8 +69,10 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"remote_server_ping_offset",{ConfigType::ULONG,0x58B534UL}},
     {"remote_server_clients_max_offset",{ConfigType::ULONG,0x5DUL}},
 
+    {"track_deformation_offset",{ConfigType::ULONG,0x58B708UL}},
+
     {"server_categories_offset",{ConfigType::ULONG,0x58B634UL}},
-    {"server_track_id",{ConfigType::ULONG,0x58B5D4UL}},
+    {"server_track_id_offset",{ConfigType::ULONG,0x58B5D4UL}},
     {"server_clients_offset",{ConfigType::ULONG,0xE49F28UL}},
 
     {"connection_string_offset",{ConfigType::ULONG,0x559DC0UL}},
@@ -142,7 +146,6 @@ static std::string stringifyDefault(const ConfigManager::ConfigOption& opt) {
     );
 }
 
-
 // Write default configuration to file
 void ConfigManager::writeDefaultConfig(const std::filesystem::path& outPath) {
     // copy our literal into a mutable std::string
@@ -168,9 +171,6 @@ void ConfigManager::writeDefaultConfig(const std::filesystem::path& outPath) {
     ofs.close();
     std::filesystem::rename(tmp, outPath);
 }
-
-
-
 
 void ConfigManager::loadConfig(const std::filesystem::path& cfgPath) {
     std::lock_guard<std::mutex> lk(mutex_);

@@ -66,7 +66,7 @@ namespace MemReaderHelpers {
     std::string getServerTrackID() {
         return readNullTermString(
             true,
-            configManager.getValue<unsigned long>("server_track_id"),
+            configManager.getValue<unsigned long>("server_track_id_offset"),
             SIZE_SERVER_TRACK_ID,
             __func__
         );
@@ -89,6 +89,27 @@ namespace MemReaderHelpers {
             SIZE_LOCAL_SERVER_LOCATION,
             __func__
         );
+    }
+
+	// getTrackDeformation
+    std::string getTrackDeformation() {
+        auto raw = memReader.readRawBytesAtAddress(
+            true,
+            configManager.getValue<unsigned long>("track_deformation_offset"),
+            SIZE_TRACK_DEFORMATION,
+            __func__
+        );
+
+        if (raw.size() != sizeof(float))
+            return "0.0";
+
+        float v;
+        std::memcpy(&v, raw.data(), sizeof(v));
+
+        char buf[16];
+        // Rounds to one decimal
+        std::snprintf(buf, sizeof(buf), "%.2f", v);
+        return std::string(buf);
     }
 
     // getLocalServerClientsMax

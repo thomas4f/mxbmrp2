@@ -7,9 +7,9 @@ A plugin for [MX Bikes](https://mx-bikes.com/) that displays event and server in
 MXBMRP2 leverages the game's plugin system and memory reading to display a customizable HUD in-game.
 
 ## Features
- - Customizable HUD: Select which data fields to display (rider, bike, track, session, etc.) and position them anywhere on the screen.
- - Time Tracking: Tracks your actual on-track time, reporting both your per-track/bike time and your overall cumulative time, persisted across sessions.
- - Discord Rich Presence: Optional integration to broadcast your MX Bikes activity directly to Discord.
+ - **Customizable HUD**: Select which data fields to display (rider, bike, track, session, etc.) and position them anywhere on the screen.
+ - **Time Tracking**: Tracks your actual on-track time, reporting both your per-track/bike time and your overall cumulative time, persisted across sessions.
+ - **Discord Rich Presence**: Optional integration to broadcast your MX Bikes activity directly to Discord.
  
 _This plugin is in early development and may contain bugs or incomplete features. If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page. Feature- and/or pull requests are also welcome!_
 
@@ -29,9 +29,9 @@ MX Bikes\
     │   mxbmrp2.dlo
     │
     └───mxbmrp2_data\
-			Enter Sansman Italic.fnt
-			discord_game_sdk.dll
-            CQ Mono.fnt
+       Enter Sansman Italic.fnt
+       discord_game_sdk.dll
+       CQ Mono.fnt
 ```
 
 For additional installation help, see the below video:
@@ -65,6 +65,7 @@ Below is a brief description of the available fields within the `Draw configurat
 | event_type          | Race                              |                                   |
 | session_type        | Warmup                            |                                   |
 | session_state       | In progress                       |                                   |
+| session_duration    | 10m +1 lap                        |                                   |
 | conditions          | Clear                             |                                   |
 | air_temperature     | 20°C                              |                                   |
 | combo_time          | 00h 12m                           | Track time on the current bike/track combination. |
@@ -121,5 +122,5 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
  - Enter Sansman Font designed by Digital Graphic Labs.
  - @TokisFFS and everyone who contributed to early testing and feedback.
- - STARS for the excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out their project.
+ - @stars for the excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out their project.
  

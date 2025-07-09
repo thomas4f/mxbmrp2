@@ -218,8 +218,10 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
 	{"event_type", "Event Type"},
 	{"session_type", "Session Type"},
 	{"session_state", "Session State"},
+	{"session_duration", "Session Duration"},
 	{"conditions", "Conditions"},
 	{"air_temperature", "Air Temperature"},
+	{"track_deformation", "Track Deformation"},
 	{"combo_time", "Combo Track Time"},
 	{"total_time", "Total Track Time"},
 	{"discord_status", "Discord RP Status"}
@@ -291,6 +293,7 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 	updateDataKeys({
 		{"session_type", PluginHelpers::getSessionType(eventType_, raceSession.m_iSession)},
 		{"session_state", PluginHelpers::getSessionState(raceSession.m_iSessionState)},
+		{"session_duration", PluginHelpers::getSessionDuration(raceSession.m_iSessionNumLaps, raceSession.m_iSessionLength) },
 		{"conditions", PluginHelpers::getConditions(raceSession.m_iConditions)},
 		{"air_temperature", std::to_string(std::lround(raceSession.m_fAirTemperature)) + "°C"}
 	});
@@ -376,6 +379,7 @@ void Plugin::onRaceEvent(const SPluginsRaceEvent_t& raceEvent) {
 		{"event_type", PluginHelpers::getEventType(raceEvent.m_iType, connectionType_)},
 		{"track_name", raceEvent.m_szTrackName},
 		{"track_length", std::to_string(std::lround(raceEvent.m_fTrackLength)) + " m"},
+		{"track_deformation", MemReaderHelpers::getTrackDeformation() + "x"}
 	});
 }
 

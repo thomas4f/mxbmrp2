@@ -33,6 +33,9 @@ namespace PluginHelpers {
     // Converts session state
     std::string getSessionState(int sessionState);
 
+    // Returns session duration
+    std::string getSessionDuration(int numLaps, int lengthMs);
+
     // Converts numeric conditions
     std::string getConditions(int condition);
 

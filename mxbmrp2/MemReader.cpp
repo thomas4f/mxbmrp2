@@ -49,8 +49,8 @@ void MemReader::initialize() {
 // Helper to validate server name
 static bool isValid(const std::string& s) {
     auto pos = s.find('\0');
-    // must have at least one ASCII before the NUL, and at least one NUL
-    if (pos == std::string::npos || pos == 0) return false;
+    // must have at least two ASCII chars before the NUL, and at least one NUL
+    if (pos == std::string::npos || pos < 2) return false;
 
     // all bytes before pos must be printable ASCII
     if (!std::all_of(s.begin(), s.begin() + pos,

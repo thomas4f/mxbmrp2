@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.12";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.13";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
@@ -43,7 +43,8 @@ inline constexpr std::size_t SIZE_REMOTE_SERVER_PING = 2;
 inline constexpr std::size_t SIZE_REMOTE_SERVER_CLIENTS_MAX = 1;
 inline constexpr std::size_t SIZE_SERVER_CATEGORIES = 128;
 inline constexpr std::size_t SIZE_SERVER_CLIENTS = 3200;
-inline constexpr std::size_t SIZE_SERVER_CLIENTS_BLOCK = 64; // each entry is 64 bytes
+inline constexpr std::size_t SIZE_SERVER_CLIENTS_BLOCK = 64;
+inline constexpr std::size_t SIZE_TRACK_DEFORMATION = 4;
 inline constexpr std::size_t SIZE_SERVER_TRACK_ID = 32;
 inline constexpr std::size_t SIZE_CONNECTION_STRING = 128;
 
@@ -72,6 +73,7 @@ session_type={{session_type}}
 session_state={{session_state}}
 conditions={{conditions}}
 air_temperature={{air_temperature}}
+track_deformation={{track_deformation}}
 combo_time={{combo_time}}
 total_time={{total_time}}
 discord_status={{discord_status}}
@@ -103,8 +105,10 @@ remote_server_location_offset={{remote_server_location_offset}}
 remote_server_ping_offset={{remote_server_ping_offset}}
 remote_server_clients_max_offset={{remote_server_clients_max_offset}}
 
+track_deformation_offset={{track_deformation_offset}}
+
 server_clients_offset={{server_clients_offset}}
-server_track_id={{server_track_id}}
+server_track_id_offset={{server_track_id_offset}}
 server_categories_offset={{server_categories_offset}}
 
 connection_string_offset={{connection_string_offset}}

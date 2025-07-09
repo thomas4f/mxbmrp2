@@ -117,6 +117,28 @@ namespace PluginHelpers {
         return "Unknown";
     }
 
+    std::string getSessionDuration(int numLaps, int lengthMs) {
+        // If neither limit is set, call it unlimited
+        if (numLaps == 0 && lengthMs == 0)
+            return "Unlimited";
+
+        std::ostringstream out;
+
+        if (lengthMs > 0) {
+            const int minutes = lengthMs / 60000; // ms -> minutes
+            out << minutes << "m";
+        }
+
+        if (numLaps > 0) {
+            if (lengthMs > 0) 
+                out << " + ";
+
+            out << numLaps << ' ' << (numLaps == 1 ? "lap" : "laps");
+        }
+
+        return out.str();
+    }
+
     std::string getSessionState(int sessionState) {
         static const std::unordered_map<int, std::string> sessionStateNames = {
             {0, "In Progress"},
