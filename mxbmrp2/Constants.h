@@ -71,6 +71,7 @@ server_clients={{server_clients}}
 event_type={{event_type}}
 session_type={{session_type}}
 session_state={{session_state}}
+session_duration={{session_duration}}
 conditions={{conditions}}
 air_temperature={{air_temperature}}
 track_deformation={{track_deformation}}
