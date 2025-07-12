@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.13";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.14";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
@@ -17,6 +17,8 @@ inline const std::filesystem::path TIME_TRACKER_FILE = "mxbmrp2.dat";
 inline constexpr UINT HOTKEY = 'R';
 inline constexpr float LINE_HEIGHT_MULTIPLIER = 1.1f;
 inline constexpr size_t MAX_STRING_LENGTH = 48;
+inline constexpr uint32_t SETUP_DEFAULT_HIGHLIGHT_MS = 5000;
+
 inline constexpr int PERIODIC_TASK_INTERVAL = 1000;
 inline constexpr const char* DEFAULT_PLAYER_ACTIVITY = "In Menus";
 inline constexpr bool LOG_MEMORY_VALUES = true;

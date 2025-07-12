@@ -35,7 +35,7 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"event_type", {ConfigType::BOOL, false}},
     {"session_type", {ConfigType::BOOL, false}},
     {"session_state", {ConfigType::BOOL, false}},
-    {"session_duration", {ConfigType::BOOL, false}},
+    {"session_duration", {ConfigType::BOOL, true}},
     {"conditions", {ConfigType::BOOL, false}},
     {"air_temperature", {ConfigType::BOOL, false}},
     {"track_deformation",{ConfigType::BOOL, false}},

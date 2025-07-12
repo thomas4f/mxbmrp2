@@ -36,9 +36,11 @@ public:
     void onRunStart();
     void onRunStop();
     void onShutdown();
+    void onRaceClassification(const SPluginsRaceClassification_t& raceClassification);
 
     // Method to retrieve the keys to display
     std::vector<std::string> getDisplayKeys();
+    std::atomic<uint64_t> lastRunInitMs_{ 0 };
 
     // Configuration values for Draw
     struct displayConfig {
@@ -89,6 +91,10 @@ private:
     std::string serverPing_ = "";
     int serverClients_ = 0;
     int serverClientsMax_ = 0;
+    int numLaps_ = 0;
+    int sessionLength_ = 0;
+    int currentLap_ = 0;
+    int sessionTime_ = 0;
 
     // Stores all key-value pairs of data for processing and display.
     std::unordered_map<std::string, std::string> allDataKeys_;

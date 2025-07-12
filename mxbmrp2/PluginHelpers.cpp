@@ -117,28 +117,6 @@ namespace PluginHelpers {
         return "Unknown";
     }
 
-    std::string getSessionDuration(int numLaps, int lengthMs) {
-        // If neither limit is set, call it unlimited
-        if (numLaps == 0 && lengthMs == 0)
-            return "Unlimited";
-
-        std::ostringstream out;
-
-        if (lengthMs > 0) {
-            const int minutes = lengthMs / 60000; // ms -> minutes
-            out << minutes << "m";
-        }
-
-        if (numLaps > 0) {
-            if (lengthMs > 0) 
-                out << " + ";
-
-            out << numLaps << ' ' << (numLaps == 1 ? "lap" : "laps");
-        }
-
-        return out.str();
-    }
-
     std::string getSessionState(int sessionState) {
         static const std::unordered_map<int, std::string> sessionStateNames = {
             {0, "In Progress"},
@@ -223,5 +201,29 @@ namespace PluginHelpers {
         }
 
         return token;
+    }
+
+    std::string getSessionDuration(int numLaps, int sessionLenMs, int sessionTimeMs) {
+        // ms -> mm:ss
+        auto toClock = [](int ms) -> std::string {
+            if (ms < 0) ms = 0;
+            int total = ms / 1000;
+            std::ostringstream oss;
+            oss << std::setw(2) << std::setfill('0') << (total / 60)
+                << ':'
+                << std::setw(2) << std::setfill('0') << (total % 60);
+            return oss.str();
+            };
+
+		// time-only session (testing/open practice)
+        if (numLaps <= 0)
+            return toClock(sessionTimeMs);
+
+        // lap-only race
+        if (sessionLenMs == 0)
+            return numLaps == 1 ? "1 Lap" : std::to_string(numLaps) + " Laps";
+
+        // time + lap race
+        return toClock(sessionTimeMs) + " +" + (numLaps == 1 ? "1 Lap" : std::to_string(numLaps) + " Laps");
     }
 }

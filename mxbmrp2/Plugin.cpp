@@ -167,7 +167,7 @@ void Plugin::setDisplayConfig() {
 	displayConfig_.backgroundColor = configManager_.getValue<unsigned long>("background_color");
 	displayConfig_.positionX = configManager_.getValue<float>("position_x");
 	displayConfig_.positionY = configManager_.getValue<float>("position_y");
-	displayConfig_.quadWidth = (displayConfig_.fontSize * MAX_STRING_LENGTH) / 4 + (displayConfig_.fontSize / 4);
+	displayConfig_.quadWidth = (displayConfig_.fontSize / 4) * (MAX_STRING_LENGTH + 1);
 }
 
 // updateDataKeys
@@ -263,9 +263,13 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
 	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
 	playerActivity_ = "On Track";
+	Logger::getInstance().log(playerActivity_);
+
 	TimeTracker::getInstance().startRun(trackID_, bikeID_);
 
-	Logger::getInstance().log(playerActivity_);
+	// For highlighting the default setup
+	uint64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	lastRunInitMs_.store(nowMs, std::memory_order_relaxed);
 
 	updateDataKeys({
 		{"setup_name", std::strlen(sessionData.m_szSetupFileName) > 0 ? std::string(sessionData.m_szSetupFileName).substr(1) : "Default" }
@@ -279,7 +283,10 @@ void Plugin::onRunDeinit() {
 
 	playerActivity_ = "In Pits";
 	Logger::getInstance().log(playerActivity_);
+
 	TimeTracker::getInstance().endRun(trackID_, bikeID_);
+
+	lastRunInitMs_.store(0, std::memory_order_relaxed);   // cancel highlight
 }
 
 // RaceSession
@@ -288,12 +295,14 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
 	playerActivity_ = "In Pits";
+	numLaps_ = raceSession.m_iSessionNumLaps;
+	sessionLength_ = raceSession.m_iSessionLength;
+
 	Logger::getInstance().log(playerActivity_);
 
 	updateDataKeys({
 		{"session_type", PluginHelpers::getSessionType(eventType_, raceSession.m_iSession)},
 		{"session_state", PluginHelpers::getSessionState(raceSession.m_iSessionState)},
-		{"session_duration", PluginHelpers::getSessionDuration(raceSession.m_iSessionNumLaps, raceSession.m_iSessionLength) },
 		{"conditions", PluginHelpers::getConditions(raceSession.m_iConditions)},
 		{"air_temperature", std::to_string(std::lround(raceSession.m_fAirTemperature)) + "°C"}
 	});
@@ -401,6 +410,15 @@ void Plugin::onRaceRemoveEntry(const SPluginsRaceRemoveEntry_t& raceRemoveEntry)
 	//Logger::getInstance().log(std::string(__func__) + " handler triggered");
 }
 
+// RaceClassification
+void Plugin::onRaceClassification(const SPluginsRaceClassification_t& raceClassification) {
+	std::lock_guard<std::mutex> lk(mutex_);
+
+	sessionTime_ = raceClassification.m_iSessionTime;
+
+    updateDataKeys({ {"session_duration", PluginHelpers::getSessionDuration(numLaps_, sessionLength_, sessionTime_)}});
+}
+
 // EventDeinit
 void Plugin::onEventDeinit() {
 	std::lock_guard<std::mutex> lk(mutex_);
@@ -421,6 +439,10 @@ void Plugin::onEventDeinit() {
 	serverPing_.clear();
 	serverClients_ = 0;
 	serverClientsMax_ = 0;
+	numLaps_ = 0;
+	sessionLength_ = 0;
+	currentLap_ = 0;
+	sessionTime_ = 0;
 
 	allDataKeys_.clear();
 	dataKeysToDisplay_.clear();

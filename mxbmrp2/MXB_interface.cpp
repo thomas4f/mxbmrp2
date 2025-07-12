@@ -77,12 +77,7 @@ __declspec(dllexport) int DrawInit(int* outNumSprites,
 }
 
 // Draw: Called every frame
-__declspec(dllexport) void Draw(int state,
-    int* outNumQuads,
-    void** outQuads,
-    int* outNumStrings,
-    void** outStrings)
-{
+__declspec(dllexport) void Draw(int state, int* outNumQuads, void** outQuads, int* outNumStrings, void** outStrings) {
     // only update on state change
     static int lastState = -1;
     auto& plugin = Plugin::getInstance();
@@ -92,59 +87,77 @@ __declspec(dllexport) void Draw(int state,
     }
 
     // get what we should display
-    auto display = plugin.getDisplayKeys();
+    const auto display = plugin.getDisplayKeys();
     if (display.empty()) {
         *outNumQuads = 0; *outQuads = nullptr;
         *outNumStrings = 0; *outStrings = nullptr;
         return;
     }
 
-    auto& cfg = plugin.displayConfig_;
-    float x = cfg.positionX;
-    float y = cfg.positionY;
-    float lh = cfg.lineHeight;
-    float w = cfg.quadWidth;
-    float h = lh * static_cast<float>(display.size());
+    // Cache frequently-used config values
+    const auto& cfg = plugin.displayConfig_;
+    const float x0 = cfg.positionX;
+    const float y0 = cfg.positionY;
+    const float lineH = cfg.lineHeight;
+    const float quadW = cfg.quadWidth;
+    const float bgH = lineH * static_cast<float>(display.size());
+    const float textX = x0 + cfg.fontSize * 0.25f;
 
     // single background quad
-    g_quadsBuf.clear();
-    g_quadsBuf.emplace_back();
-    auto& q = g_quadsBuf[0];
-    q.m_aafPos[0][0] = x;     q.m_aafPos[0][1] = y;     // top-left
-    q.m_aafPos[1][0] = x;     q.m_aafPos[1][1] = y + h; // bottom-left
-    q.m_aafPos[2][0] = x + w; q.m_aafPos[2][1] = y + h; // bottom-right
-    q.m_aafPos[3][0] = x + w; q.m_aafPos[3][1] = y;     // top-right
-    q.m_iSprite = 0;
-    q.m_ulColor = cfg.backgroundColor;
+    g_quadsBuf.assign(1, {});
+    auto& bg = g_quadsBuf.front();
+    bg.m_aafPos[0][0] = x0; bg.m_aafPos[0][1] = y0;               // TL
+    bg.m_aafPos[1][0] = x0; bg.m_aafPos[1][1] = y0 + bgH;         // BL
+    bg.m_aafPos[2][0] = x0 + quadW; bg.m_aafPos[2][1] = y0 + bgH; // BR
+    bg.m_aafPos[3][0] = x0 + quadW; bg.m_aafPos[3][1] = y0;       // TR
+    bg.m_iSprite = 0;
+    bg.m_ulColor = cfg.backgroundColor;
 
     *outNumQuads = 1;
     *outQuads = g_quadsBuf.data();
 
-    // then each string
-    size_t n = display.size();
+    // Helper to append a string to be drawn
+    auto pushString = [&](size_t row, const char* text, uint32_t color) {
+            auto& fs = g_strsBuf.emplace_back();
+            strncpy_s(fs.m_szString, sizeof(fs.m_szString), text, _TRUNCATE);
+            fs.m_afPos[0] = textX;
+            fs.m_afPos[1] = y0 + static_cast<float>(row) * lineH;
+            fs.m_iFont = 1;
+            fs.m_fSize = cfg.fontSize;
+            fs.m_iJustify = 0;
+            fs.m_ulColor = color;
+        };
+
+    // Build the string buffer
     g_strsBuf.clear();
-    g_strsBuf.reserve(display.size());
-    for (size_t i = 0; i < n; ++i) {
-        g_strsBuf.emplace_back();
-        auto& s = g_strsBuf.back();
-        // copy up to 99 chars, _TRUNCATE will add null terminator
-        strncpy_s(s.m_szString, sizeof(s.m_szString),
-            display[i].c_str(), _TRUNCATE);
+    g_strsBuf.reserve(display.size() + 1); // +1 if a line is split
 
-        s.m_afPos[0] = x + (cfg.fontSize * 0.25f);
-        s.m_afPos[1] = y + (static_cast<float>(i) * lh);
-        s.m_iFont = 1;
-        s.m_fSize = cfg.fontSize;
-        s.m_iJustify = 0;
-        s.m_ulColor = cfg.fontColor;
+    for (size_t row = 0; row < display.size(); ++row) {
+        const std::string& line = display[row];
 
-        // if first line is our banner, color it specially
-        if (i == 0 && display[0].rfind("mxbmrp2", 0) == 0) {
-            s.m_ulColor = 0xFF0081CC;  // ABGR
+        // Special-case: split "Setup Name: Default"
+        if (line == "Setup Name: Default") {
+            // How long since we went on-track?
+            uint64_t startMs = plugin.lastRunInitMs_.load(std::memory_order_relaxed);
+            uint64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+            bool highlight = (startMs != 0) && (nowMs - startMs < SETUP_DEFAULT_HIGHLIGHT_MS);
+
+            // Hacky way of overlapping the two pieces of text
+            pushString(row, "Setup Name: ", cfg.fontColor);
+            pushString(row, "            Default", highlight ? 0xFF0000FF : cfg.fontColor); /// red or white
+            continue;
         }
+
+        // Normal path, with optional banner colour on the first row
+        uint32_t colour = cfg.fontColor;
+        if (row == 0 && line.rfind("mxbmrp2", 0) == 0)
+            colour = 0xFF0081CC; // orange
+
+        pushString(row, line.c_str(), colour);
     }
 
-    *outNumStrings = static_cast<int>(n);
+    // Hand buffers back to the caller
+    *outNumStrings = static_cast<int>(g_strsBuf.size());
     *outStrings = g_strsBuf.data();
 }
 
@@ -195,4 +208,18 @@ __declspec(dllexport) void RunStart() {
 
 __declspec(dllexport) void RunStop() {
     Plugin::getInstance().onRunStop();
+}
+
+// RaceClassification
+__declspec(dllexport) void RaceClassification(void* _pData, int   _iDataSize, void* _pArray, int   _iElemSize) {
+    SPluginsRaceClassification_t* psRaceClassification =
+        (SPluginsRaceClassification_t*)_pData;
+
+    // Dont flood the plugin
+    static int lastSecond = -1;
+    int curSecond = psRaceClassification->m_iSessionTime / 1000;
+    if (curSecond != lastSecond) {
+        lastSecond = curSecond;
+        Plugin::getInstance().onRaceClassification(*psRaceClassification);
+    }
 }

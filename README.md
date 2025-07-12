@@ -46,13 +46,13 @@ Optionally, you can customize `mxbmrp2.ini` in your MX Bikes profile directory (
 Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
 | Field               | Example                           | Notes                             |
 |---------------------|-----------------------------------|-----------------------------------|
-| plugin_banner       | mxbmrp2 v0.9.3                    |                                   |
+| plugin_banner       | mxbmrp2 v0.9.14                   |                                   |
 | race_number         |                                   | Prefixed to rider_name            |
 | rider_name          | 4 Thomas                          |                                   |
 | bike_category       | MX2 OEM                           |                                   |
 | bike_id             | MX2OEM_2023_KTM_250_SX-F          |                                   |
 | bike_name           | KTM 250 SX-F 2023                 |                                   |
-| setup_name          | Default                           |                                   |
+| setup_name          | Default                           | Briefly highlighted in red if "Default" is used. |
 | track_id            | HM_swedish_midsummer_carnage_2    |                                   |
 | track_name          | HM \| Swedish Midsummer Carnage 2 |                                   |
 | track_length        | 965 m                             |                                   |
@@ -65,7 +65,7 @@ Below is a brief description of the available fields within the `Draw configurat
 | event_type          | Race                              |                                   |
 | session_type        | Warmup                            |                                   |
 | session_state       | In progress                       |                                   |
-| session_duration    | 10m +1 lap                        |                                   |
+| session_duration    | 10:00 +2 laps                     | The elapsed/remaining time and/or number of laps. |
 | conditions          | Clear                             |                                   |
 | air_temperature     | 20°C                              |                                   |
 | combo_time          | 00h 12m                           | Track time on the current bike/track combination. |

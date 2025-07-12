@@ -94,6 +94,14 @@ extern "C" {
         int m_iRaceNum;
     } SPluginsRaceRemoveEntry_t;
 
+    // RaceClassification
+    typedef struct {
+        int m_iSession;
+        int m_iSessionState;
+        int m_iSessionTime;
+        int m_iNumEntries;
+    } SPluginsRaceClassification_t;
+
     // Functions exported to the game
     __declspec(dllexport) const char* GetModID();
     __declspec(dllexport) int GetModDataVersion();
@@ -113,4 +121,5 @@ extern "C" {
     __declspec(dllexport) void RaceRemoveEntry(void* _pData, int _iDataSize);
     __declspec(dllexport) void RunStart();
     __declspec(dllexport) void RunStop();
+    __declspec(dllexport) void RaceClassification(void* _pData, int _iDataSize, void* _pArray, int   _iElemSize);
 }
