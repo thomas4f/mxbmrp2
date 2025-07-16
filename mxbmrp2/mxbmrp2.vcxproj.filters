@@ -57,6 +57,9 @@
     <ClInclude Include="DiscordManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="htmlWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -135,6 +138,9 @@
       <Filter>Source Files\discord_game_sdk</Filter>
     </ClCompile>
     <ClCompile Include="DiscordManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="htmlWriter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -56,6 +56,9 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     // Discord integration
     { "enable_discord_rich_presence", {ConfigType::BOOL, false }},
 
+    // HTML export
+    { "enable_html_export", {ConfigType::BOOL, false }},
+
     // Memory configuration
     {"local_server_name_offset",{ConfigType::ULONG,0x9D6768UL}},
     {"local_server_password_offset",{ConfigType::ULONG,0x9D67ACUL}},

@@ -7,12 +7,13 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.14";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.15";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
 inline const std::filesystem::path CONFIG_FILE = "mxbmrp2.ini";
 inline const std::filesystem::path TIME_TRACKER_FILE = "mxbmrp2.dat";
+inline const std::filesystem::path HTML_FILE = "mxbmrp2.html";
 
 inline constexpr UINT HOTKEY = 'R';
 inline constexpr float LINE_HEIGHT_MULTIPLIER = 1.1f;
@@ -95,6 +96,9 @@ background_color={{background_color}}
 # Discord Rich Presence
 enable_discord_rich_presence={{enable_discord_rich_presence}}
 
+# HTML Export for OBS Studio
+enable_html_export={{enable_html_export}}
+
 # Memory addresses (don't touch!)
 local_server_name_offset={{local_server_name_offset}}
 local_server_password_offset={{local_server_password_offset}}
@@ -116,3 +120,18 @@ server_categories_offset={{server_categories_offset}}
 
 connection_string_offset={{connection_string_offset}}
 )";
+
+// HTML export
+static constexpr char HTML_TEMPLATE[] = R"(<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="1">
+    <title>MXBMRP2</title>
+    <link rel="stylesheet" href="mxbmrp2.css">
+</head>
+<body>
+    {{BODY}}
+</body>
+</html>)";

@@ -119,4 +119,9 @@ private:
 	// Discord
     bool useDiscordRichPresence_ = false;
     DiscordManager discordManager_;
+
+	// HTML Export
+    bool useHtmlExport_ = false;
+    std::filesystem::path htmlPath_;
+    std::string lastHtml_;
 };

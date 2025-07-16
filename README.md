@@ -1,17 +1,18 @@
 # MX Bikes Memory Reader Plugin 2 (MXBMRP2)
 
-A plugin for [MX Bikes](https://mx-bikes.com/) that displays event and server information directly on the in-game screen.
+A plugin for [MX Bikes](https://mx-bikes.com/).
 
 ![mxbmrp2](https://github.com/user-attachments/assets/fad6f978-5035-465e-b6dd-b61eec51aeae)
 
-MXBMRP2 leverages the game's plugin system and memory reading to display a customizable HUD in-game.
+> **Stay on track** - MXBMRP2 aims to keep live session, server, and rider data on-screen, so you never have to pit or alt-tab for crucial info.
 
 ## Features
  - **Customizable HUD**: Select which data fields to display (rider, bike, track, session, etc.) and position them anywhere on the screen.
  - **Time Tracking**: Tracks your actual on-track time, reporting both your per-track/bike time and your overall cumulative time, persisted across sessions.
  - **Discord Rich Presence**: Optional integration to broadcast your MX Bikes activity directly to Discord.
+ - **OBS Studio Integration**: Optionally export an HTML overlay that you can add as a Browser Source in OBS Studio for fully customizable display.
  
-_This plugin is in early development and may contain bugs or incomplete features. If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page. Feature- and/or pull requests are also welcome!_
+_If you encounter any issues or have suggestions, please report them on the [Issues](https://github.com/thomas4f/mxbmrp2/issues) page. Feature- and/or pull requests are also welcome!_
 
 ## Installation
 
@@ -36,7 +37,7 @@ MX Bikes\
 
 For additional installation help, see the below video:
 
-https://github.com/user-attachments/assets/5c409833-6a4a-4364-a203-b3dc4c76e45c
+https://github.com/user-attachments/assets/f664fd29-057e-4a7e-b82b-f8635bfa4caf
 
 ## Basic configuration
 
@@ -71,6 +72,7 @@ Below is a brief description of the available fields within the `Draw configurat
 | combo_time          | 00h 12m                           | Track time on the current bike/track combination. |
 | total_time          | 85h 50m                           | Total track time across all combinations. |
 | discord_status      | Connected                         | Indicates the status of Discord Rich Presence. |
+| enable_html_export  |                                   | Creates `mxbmrp2.html` that can be included in OBS Studio. |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
@@ -111,6 +113,68 @@ The recorded times can be viewed in `mxbmrp2-times.csv` in your MX Bikes profile
 
 ### Discord Rich Presence
 To broadcast your in-game status such as current track, session type, party size, and server name, set `enable_discord_rich_presence=true` in the configuration file.
+
+### OBS Studio Integration
+To add the overlay in OBS, perform the following:
+ 1. In `mxbmrp2.ini`, set `enable_html_export` to `true`. This will create and update `mxbmrp2.html` in your MX Bikes profile directory.
+ 2. Restart MX Bikes (or press CTRL+R) to reload the plugin with HTML export enabled.
+ 3. In OBS, add a `Browser` source, tick `Local file` and set the path to the file (e.g. `%USERPROFILE%\Documents\Piboso\MX Bikes\mxbmrp2.html`).
+ 4. Tweak the layout by editing the `Custom CSS` in OBS, or create `style.css` in the same directory as the .html file. See example below.
+ 5. Adjust the width, height, scaling and position of the overlay as necessary.
+ 
+ _The contents will refresh automatically, and display the fields enabled in the configuration file. Also consider setting `default_enabled` to `false` to avoid having multiple overlays!_
+ 
+#### Example CSS
+Here's an example of how to customize the layout:
+```css
+html,
+body{
+  margin:0;
+  color:#e0e0e0;
+  background:transparent;
+}
+
+.data{
+  display:table;
+  width:100%;
+  overflow-y:auto;
+  box-sizing:border-box;
+  border-radius:1em;
+  table-layout:fixed;
+  padding:2vh 2vw;
+  font:calc(.8rem + 1vw)/1 sans-serif;
+  background:rgba(30,30,30,.95);
+}
+
+.data__item{display:table-row;}
+
+.data__label,
+.data__value,
+.data__no-data{
+  display:table-cell;
+  padding:1vh 1vw;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.data__label{
+  color:#fff;
+  font-weight:700;
+  padding-right:2vw;
+}
+
+.data__item:not(:last-child):not(.data__item--plugin_banner)
+  > :is(.data__label,.data__value){
+  border-bottom:1px solid #444;
+}
+
+.data__item--plugin_banner .data__value{
+  color:#ffb74d;
+  font-weight:700;
+}
+
+```
 
 ## Final notes
 

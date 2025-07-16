@@ -17,6 +17,7 @@
 #include "MemReaderHelpers.h"
 #include "KeyPressHandler.h"
 #include "timeTracker.h"
+#include "HtmlWriter.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -68,6 +69,16 @@ void Plugin::onStartup(const std::string& savePath) {
 		discordManager_.initialize(DISCORD_APP_ID);
 	}
 
+	updateDataKeys({ {"plugin_banner", PLUGIN_VERSION} });
+
+	// HTML Export
+	useHtmlExport_ = configManager_.getValue<bool>("enable_html_export");
+	htmlPath_ = std::filesystem::path(savePath) / HTML_FILE;
+
+	if (useHtmlExport_) {
+		Logger::getInstance().log("Exporting HTML to: " + htmlPath_.string());
+	}
+
 	// Start the periodic task thread
 	runPeriodicTask_ = true;
 	periodicTaskThread_ = std::thread(&Plugin::periodicTaskLoop, this);
@@ -96,6 +107,9 @@ void Plugin::onShutdown() {
 	if (useDiscordRichPresence_) {
 		discordManager_.finalize();
 	}
+
+	// HTML Export
+	HtmlWriter::atomicWrite(htmlPath_, HtmlWriter::renderNoData());
 }
 
 // Periodic tasks
@@ -114,15 +128,31 @@ void Plugin::periodicTaskLoop() {
 				
 				updateDataKeys({
 					{"server_ping", serverPing_},
-					{"server_clients", std::to_string(serverClients_) + "/" + std::to_string(serverClientsMax_)}
+					{"server_clients", std::to_string(serverClients_) + "/" + std::to_string(serverClientsMax_)},
+					{"combo_time", TimeTracker::getInstance().getCurrentComboTime()},
+					{"total_time", TimeTracker::getInstance().getTotalTime()},
+					{"discord_status", discordManager_.getConnectionStateString()}
 				});
 			}
 
-			updateDataKeys({
-				{"combo_time", TimeTracker::getInstance().getCurrentComboTime()},
-				{"total_time", TimeTracker::getInstance().getTotalTime()},
-				{"discord_status", discordManager_.getConnectionStateString()}
-			});
+			// Regenerate HTML
+			if (useHtmlExport_) {
+				std::string html = HtmlWriter::renderHtml(
+					allDataKeys_,
+					configKeyToDisplayNameMap,
+					configManager_);
+
+				if (html != lastHtml_) {
+					try {
+						HtmlWriter::atomicWrite(htmlPath_, html);
+						lastHtml_ = std::move(html);
+					}
+					catch (const std::exception& e) {
+						Logger::getInstance().log(
+							std::string("HTML write failed: ") + e.what());
+					}
+				}
+			}
 		}
 
 		// Discord
@@ -172,22 +202,17 @@ void Plugin::setDisplayConfig() {
 
 // updateDataKeys
 void Plugin::updateDataKeys(const std::unordered_map<std::string, std::string>& dataKeys) {
-	// NOTE: this function is NOT thread-safe on its own!
-
+	
 	// Merge in the new values
-	for (const auto& [key, value] : dataKeys) {
+	for (const auto& [key, value] : dataKeys)
 		allDataKeys_[key] = value;
-	}
 
 	// Rebuild the display list
-	auto newDisplay = PluginHelpers::buildDisplayStrings(
+	dataKeysToDisplay_ = PluginHelpers::buildDisplayStrings(
 		allDataKeys_,
 		configKeyToDisplayNameMap,
 		configManager_,
-		MAX_STRING_LENGTH
-	);
-
-	dataKeysToDisplay_ = std::move(newDisplay);
+		MAX_STRING_LENGTH);
 }
 
 // Public getter for keys to display
@@ -304,7 +329,7 @@ void Plugin::onRaceSession(const SPluginsRaceSession_t& raceSession) {
 		{"session_type", PluginHelpers::getSessionType(eventType_, raceSession.m_iSession)},
 		{"session_state", PluginHelpers::getSessionState(raceSession.m_iSessionState)},
 		{"conditions", PluginHelpers::getConditions(raceSession.m_iConditions)},
-		{"air_temperature", std::to_string(std::lround(raceSession.m_fAirTemperature)) + "°C"}
+		{"air_temperature", std::to_string(std::lround(raceSession.m_fAirTemperature)) + " C"}
 	});
 }
 
@@ -380,7 +405,6 @@ void Plugin::onRaceEvent(const SPluginsRaceEvent_t& raceEvent) {
 	}
 
 	updateDataKeys({
-		{"plugin_banner", PLUGIN_VERSION},
 		{"server_name", serverName_},
 		{"server_password", serverPassword_},
 		{"server_location", serverLocation_},
@@ -447,6 +471,8 @@ void Plugin::onEventDeinit() {
 	allDataKeys_.clear();
 	dataKeysToDisplay_.clear();
 
+	updateDataKeys({ { "plugin_banner", PLUGIN_VERSION } });
+
 	Logger::getInstance().log(playerActivity_);
 }
 
@@ -466,34 +492,42 @@ void Plugin::onRunStop() {
 void Plugin::toggleDisplay() {
 	std::lock_guard<std::mutex> lk(mutex_);
 
-	// 1) Toggle the HUD on/off
+	// Toggle the HUD on/off
 	displayEnabled_ = !displayEnabled_;
 	Logger::getInstance().log(
 		displayEnabled_ ? "Display enabled." : "Display disabled."
 	);
 
-	// 2) Reload everything from disk
+	// Reload everything from disk
 	configManager_.loadConfig(configPath_);
 	setDisplayConfig();
 
-	// 3) Rebuild display strings if the HUD is on
+	// Rebuild display strings if the HUD is on
 	if (displayEnabled_) {
 		updateDataKeys(allDataKeys_);
 	}
 
-	// 4) Check for a change in the Discord setting
+	// Check for config changes
 	bool newUseDiscordRichPresence = configManager_.getValue<bool>("enable_discord_rich_presence");
 	if (newUseDiscordRichPresence && !useDiscordRichPresence_) {
-		// start it
 		discordManager_.initialize(DISCORD_APP_ID);
 		Logger::getInstance().log("Discord Rich Presence enabled.");
 	}
 	else if (!newUseDiscordRichPresence && useDiscordRichPresence_) {
-		// shut it down
 		discordManager_.finalize();
 		Logger::getInstance().log("Discord Rich Presence disabled.");
 	}
-	// 5) Store the new state
 	useDiscordRichPresence_ = newUseDiscordRichPresence;
+
+	bool newUseHtmlExport = configManager_.getValue<bool>("enable_html_export");
+	if (newUseHtmlExport && !useHtmlExport_) {
+		lastHtml_.clear();
+		Logger::getInstance().log("HTML export enabled.");
+	}
+	else if (!newUseHtmlExport && useHtmlExport_) {
+		Logger::getInstance().log("HTML export disabled.");
+		HtmlWriter::atomicWrite(htmlPath_, HtmlWriter::renderNoData());
+	}
+	useHtmlExport_ = newUseHtmlExport;
 }
 
