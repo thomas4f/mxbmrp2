@@ -181,7 +181,8 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="DiscordManager.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="htmlWriter.h" />
+    <ClInclude Include="HTMLWriter.h" />
+    <ClInclude Include="JSONWriter.h" />
     <ClInclude Include="KeyPressHandler.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MemReader.h" />
@@ -252,7 +253,8 @@
     <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="DiscordManager.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="htmlWriter.cpp" />
+    <ClCompile Include="HTMLWriter.cpp" />
+    <ClCompile Include="JSONWriter.cpp" />
     <ClCompile Include="keyPressHandler.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemReader.cpp" />

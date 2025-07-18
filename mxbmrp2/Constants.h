@@ -7,13 +7,14 @@
 #include <filesystem>
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.15";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.16";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
 inline const std::filesystem::path CONFIG_FILE = "mxbmrp2.ini";
 inline const std::filesystem::path TIME_TRACKER_FILE = "mxbmrp2.dat";
 inline const std::filesystem::path HTML_FILE = "mxbmrp2.html";
+inline const std::filesystem::path JSON_FILE = "mxbmrp2.json";
 
 inline constexpr UINT HOTKEY = 'R';
 inline constexpr float LINE_HEIGHT_MULTIPLIER = 1.1f;
@@ -50,6 +51,7 @@ inline constexpr std::size_t SIZE_SERVER_CLIENTS_BLOCK = 64;
 inline constexpr std::size_t SIZE_TRACK_DEFORMATION = 4;
 inline constexpr std::size_t SIZE_SERVER_TRACK_ID = 32;
 inline constexpr std::size_t SIZE_CONNECTION_STRING = 128;
+inline constexpr std::size_t SIZE_REMAINING_TEAROFFS = 1;
 
 // ConfigManager
 static constexpr char DEFAULT_INI_TEMPLATE[] = R"(# mxbmrp2.ini
@@ -62,6 +64,7 @@ bike_category={{bike_category}}
 bike_id={{bike_id}}
 bike_name={{bike_name}}
 setup_name={{setup_name}}
+remaining_tearoffs={{remaining_tearoffs}}
 track_id={{track_id}}
 track_name={{track_name}}
 track_length={{track_length}}
@@ -96,8 +99,9 @@ background_color={{background_color}}
 # Discord Rich Presence
 enable_discord_rich_presence={{enable_discord_rich_presence}}
 
-# HTML Export for OBS Studio
+# HTML/JSON Export
 enable_html_export={{enable_html_export}}
+enable_json_export={{enable_json_export}}
 
 # Memory addresses (don't touch!)
 local_server_name_offset={{local_server_name_offset}}
@@ -111,6 +115,9 @@ remote_server_name_offset={{remote_server_name_offset}}
 remote_server_location_offset={{remote_server_location_offset}}
 remote_server_ping_offset={{remote_server_ping_offset}}
 remote_server_clients_max_offset={{remote_server_clients_max_offset}}
+
+local_server_remaining_tearoffs_offset={{local_server_remaining_tearoffs_offset}}
+remote_server_remaining_tearoffs_offset={{remote_server_remaining_tearoffs_offset}}
 
 track_deformation_offset={{track_deformation_offset}}
 
@@ -127,7 +134,7 @@ static constexpr char HTML_TEMPLATE[] = R"(<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="1">
+    <script>setInterval(() => location.reload(), 1000);</script>
     <title>MXBMRP2</title>
     <link rel="stylesheet" href="mxbmrp2.css">
 </head>

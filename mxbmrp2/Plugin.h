@@ -124,4 +124,9 @@ private:
     bool useHtmlExport_ = false;
     std::filesystem::path htmlPath_;
     std::string lastHtml_;
+
+	// JSON Export
+    bool useJsonExport_ = false;
+    std::filesystem::path jsonPath_;
+    std::string lastJson_;
 };

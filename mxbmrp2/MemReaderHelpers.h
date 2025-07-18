@@ -36,4 +36,5 @@ namespace MemReaderHelpers {
     int getRemoteServerClientsMax(uintptr_t remoteIPv6MemoryAddress);
     std::string getRemoteServerPing();
     int getServerClientsCount();
+    std::string getRemainingTearoffs(const std::string& connectionType);
 }

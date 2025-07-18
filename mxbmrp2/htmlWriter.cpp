@@ -7,7 +7,7 @@
 #include <fstream>
 
 #include "Constants.h"
-#include "HtmlWriter.h"
+#include "HTMLWriter.h"
 #include "ConfigManager.h"
 
 namespace {
@@ -17,11 +17,11 @@ namespace {
         out.reserve(s.size());
         for (char c : s) {
             switch (c) {
-            case '&':  out += "&amp;";  break;
-            case '<':  out += "&lt;";   break;
-            case '>':  out += "&gt;";   break;
+            case '&':  out += "&amp;"; break;
+            case '<':  out += "&lt;"; break;
+            case '>':  out += "&gt;"; break;
             case '"': out += "&quot;"; break;
-            case '\'': out += "&#39;";  break;
+            case '\'': out += "&#39;"; break;
             default:    out += c;
             }
         }
@@ -50,16 +50,16 @@ namespace HtmlWriter {
             if (key != "plugin_banner")
                 hasRealData = true;
 
-            body << "  <div class=\"data__item data__item--" << key << "\">\n";
+            body << "  <div class=\"data__item " << key << "\">\n";
 
             if (key == "plugin_banner") {
-                body << "    <span class=\"data__value\">"
+                body << "    <span class=\"data__value " << key << "\">"
                     << escapeXml(it->second) << "</span>\n";
             }
             else {
-                body << "    <span class=\"data__label\">"
+                body << "    <span class=\"data__label " << key << "\">"
                     << escapeXml(displayName) << " </span>\n"
-                    << "    <span class=\"data__value\">"
+                    << "    <span class=\"data__value " << key << "\">"
                     << escapeXml(it->second) << "</span>\n";
             }
             body << "  </div>\n";
@@ -67,7 +67,7 @@ namespace HtmlWriter {
 
         // If we only have the banner, add a placeholder line
         if (!hasRealData) {
-            body << "  <span class=\"data__no-data\">No data</span>\n";
+            body << "  <span class=\"data__value no_data\">No data</span>\n";
         }
 
         body << "</div>\n";
@@ -84,10 +84,10 @@ namespace HtmlWriter {
     {
         std::ostringstream body;
         body << "<div class=\"data\">\n"
-            << "  <div class=\"data__item data__item--plugin_banner\">\n"
-            << "    <span class=\"data__value\">" << PLUGIN_VERSION << "</span>\n"
+            << "  <div class=\"data__item plugin_banner\">\n"
+            << "    <span class=\"data__value plugin_banner\">" << PLUGIN_VERSION << "</span>\n"
             << "  </div>\n"
-            << "  <span class=\"data__no-data\">No data</span>\n"
+            << "  <span class=\"data__value no_data\">No data</span>\n"
             << "</div>\n";
 
         std::string out = HTML_TEMPLATE;

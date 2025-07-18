@@ -256,4 +256,24 @@ namespace MemReaderHelpers {
         }
         return count;
     }
+
+    // getRemainingTearoffs
+    std::string getRemainingTearoffs(const std::string& connectionType) {
+
+        std::string offset = (connectionType == "Client")
+            ? "remote_server_remaining_tearoffs_offset"
+            : "local_server_remaining_tearoffs_offset";
+
+        auto raw = memReader.readRawBytesAtAddress(
+            true,
+            configManager.getValue<unsigned long>(offset),
+            SIZE_REMAINING_TEAROFFS
+        );
+
+        if (raw.empty()) {
+            return {};
+        }
+
+        return std::to_string(static_cast<int>(raw[0]));
+    }
 }

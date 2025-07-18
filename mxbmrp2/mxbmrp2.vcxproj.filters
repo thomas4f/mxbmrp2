@@ -57,7 +57,10 @@
     <ClInclude Include="DiscordManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="htmlWriter.h">
+    <ClInclude Include="HTMLWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JSONWriter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -140,7 +143,10 @@
     <ClCompile Include="DiscordManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="htmlWriter.cpp">
+    <ClCompile Include="HTMLWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JSONWriter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

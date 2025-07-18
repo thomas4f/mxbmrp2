@@ -54,6 +54,7 @@ Below is a brief description of the available fields within the `Draw configurat
 | bike_id             | MX2OEM_2023_KTM_250_SX-F          |                                   |
 | bike_name           | KTM 250 SX-F 2023                 |                                   |
 | setup_name          | Default                           | Briefly highlighted in red if "Default" is used. |
+ | remaining_tearoffs | 21                                |                                   |
 | track_id            | HM_swedish_midsummer_carnage_2    |                                   |
 | track_name          | HM \| Swedish Midsummer Carnage 2 |                                   |
 | track_length        | 965 m                             |                                   |
@@ -100,10 +101,6 @@ Here are some examples on how to configure the other settings:
 ### Font family
 By default, the plugin uses the `CQ Mono` font to stay consistent with the [MaxHUD](https://forum.mx-bikes.com/index.php?topic=180.0) plugin. 
 
-MX Bikes also makes heavy use of the `Enter Sansman Italic` font, which is included as an alternative.
-
-Note that unlike the other settings, **changing the font family requires a restart of the game**.
-
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
 ### Time tracking
@@ -119,62 +116,163 @@ To add the overlay in OBS, perform the following:
  1. In `mxbmrp2.ini`, set `enable_html_export` to `true`. This will create and update `mxbmrp2.html` in your MX Bikes profile directory.
  2. Restart MX Bikes (or press CTRL+R) to reload the plugin with HTML export enabled.
  3. In OBS, add a `Browser` source, tick `Local file` and set the path to the file (e.g. `%USERPROFILE%\Documents\Piboso\MX Bikes\mxbmrp2.html`).
- 4. Tweak the layout by editing the `Custom CSS` in OBS, or create `style.css` in the same directory as the .html file. See example below.
+ 4. Tweak the layout by editing the `Custom CSS` in OBS, or, preferably, create `mxbmrp2.css` in the same directory as the .html file. See examples below.
  5. Adjust the width, height, scaling and position of the overlay as necessary.
  
  _The contents will refresh automatically, and display the fields enabled in the configuration file. Also consider setting `default_enabled` to `false` to avoid having multiple overlays!_
  
 #### Example CSS
-Here's an example of how to customize the layout:
+Here's a few example of how to customize the HTML layout:
+
+**PiBoSo-like**:
+
+<img width="1769" height="995" alt="Image" src="https://github.com/user-attachments/assets/a759b91c-5079-4680-bb07-cc2bed29d55f" />
+
 ```css
-html,
-body{
-  margin:0;
-  color:#e0e0e0;
-  background:transparent;
+/* MXBMRP2 CSS Example: PiBoSo-like */
+
+@import url('https://fonts.cdnfonts.com/css/enter-sansman');
+
+html, body {
+  margin: 0;
+  font: italic 0.9em 'Enter Sansman';
+  font-weight: 800;
 }
 
-.data{
-  display:table;
-  width:100%;
-  overflow-y:auto;
-  box-sizing:border-box;
-  border-radius:1em;
-  table-layout:fixed;
-  padding:2vh 2vw;
-  font:calc(.8rem + 1vw)/1 sans-serif;
-  background:rgba(30,30,30,.95);
+.data {
+  background: rgba(30, 30, 30, .8);
+  color: rgb(240, 240, 240);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  padding: 0.5em;
 }
 
-.data__item{display:table-row;}
-
-.data__label,
-.data__value,
-.data__no-data{
-  display:table-cell;
-  padding:1vh 1vw;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+.data__item {
+  display: contents;
 }
 
-.data__label{
-  color:#fff;
-  font-weight:700;
-  padding-right:2vw;
+.data__label {
+  padding-right: .25em;
 }
 
-.data__item:not(:last-child):not(.data__item--plugin_banner)
-  > :is(.data__label,.data__value){
-  border-bottom:1px solid #444;
+.data__value {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.data__item--plugin_banner .data__value{
-  color:#ffb74d;
-  font-weight:700;
+.data__value.plugin_banner {
+  font-size: 2em;
+  grid-column: 1 / -1;
+  color: #ffb74d;
 }
-
 ```
+
+**Minimal with icons**:
+
+<img width="1769" height="995" alt="Image" src="https://github.com/user-attachments/assets/78ba0b35-d922-4f46-a400-b2fd3783a0a1" />
+
+```css
+/* MXBMRP2 CSS Example: Minimal with icons */
+
+@import url('https://fonts.cdnfonts.com/css/enter-sansman');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');
+
+.data {
+  font: italic 1rem 'Enter Sansman';
+  color: #fff;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+}
+
+.data__item {
+  display: contents;
+}
+
+.data__label, .data__value {
+  padding: 0.25rem;
+} 
+
+.data__label, .plugin_banner, .no_data {
+  font-size: 0;
+}
+
+.data__label::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 600;
+  font-style: normal;
+  font-size: 1.2rem;}
+
+/* Hide everything except ... */
+.data__item:not(
+  .track_name,
+  .session_duration,
+  .server_name,
+  .server_password,
+  .server_clients) {
+  display: none;
+}
+
+/* And add some modifiers those */
+.data__label.track_name::before        { content: "\f11e"; }
+.data__label.session_duration::before  { content: "\f2f2"; }
+.data__label.server_name::before       { content: "\f233"; }
+.data__label.server_password::before   { content: "\f084"; }
+.data__label.server_clients::before    { content: "\f500"; }
+```
+
+**Table-layout**:
+
+<img width="1769" height="995" alt="Image" src="https://github.com/user-attachments/assets/0d383da0-c554-4d03-9704-9304884b8e8a" />
+
+```css
+/* MXBMRP2 CSS Example: Table-layout */
+
+html, body {
+  margin: 0;
+  font: clamp(1.5rem, 2.5vw, 4rem) sans-serif;
+}
+
+.data {
+  background: rgba(30, 30, 30, .95);
+  color: #fff;
+  border-radius: 0.5rem;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+}
+
+.data__item {
+  display: contents;
+}
+
+.data__label, .data__value {
+  border-bottom:1px solid #444;
+  padding: 0.5rem;
+} 
+ 
+.data__item:last-child > * {
+  border-bottom: none;
+}
+
+.data__label {
+  font-weight: 700;
+  padding-right: .25em;
+}
+
+.data__value {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.data__value.plugin_banner {
+  grid-column: 1 / -1;
+  color: #ffb74d;
+  font-weight: 700;
+}
+```
+If you'd like build a HTML/CSS from scratch or do something else with the data, you can set `enable_json_export=true` and grab it from there.
 
 ## Final notes
 
@@ -184,7 +282,6 @@ The game's plugin system lacks certain fields (e.g., whether you’re in testing
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
  - [CQ Mono Font](https://www.fontspace.com/cq-mono-font-f23980) designed by Chequered Ink.
- - Enter Sansman Font designed by Digital Graphic Labs.
  - @TokisFFS and everyone who contributed to early testing and feedback.
  - @stars for the excellent [Improved MX Bikes Status in Discord plugin](https://mxb-mods.com/improved-discord-rich-presence-discord-rpc/), which inspired aspects of this plugin's Discord integration. For a lightweight Discord-only solution, be sure to check out their project.
  

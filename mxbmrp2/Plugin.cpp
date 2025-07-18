@@ -17,7 +17,8 @@
 #include "MemReaderHelpers.h"
 #include "KeyPressHandler.h"
 #include "timeTracker.h"
-#include "HtmlWriter.h"
+#include "HTMLWriter.h"
+#include "JSONWriter.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -79,6 +80,11 @@ void Plugin::onStartup(const std::string& savePath) {
 		Logger::getInstance().log("Exporting HTML to: " + htmlPath_.string());
 	}
 
+	// JSON Export
+	useJsonExport_ = configManager_.getValue<bool>("enable_json_export");
+	jsonPath_ = std::filesystem::path(savePath) / JSON_FILE;
+
+
 	// Start the periodic task thread
 	runPeriodicTask_ = true;
 	periodicTaskThread_ = std::thread(&Plugin::periodicTaskLoop, this);
@@ -135,7 +141,30 @@ void Plugin::periodicTaskLoop() {
 				});
 			}
 
-			// Regenerate HTML
+			if (playerActivity_ == "On Track") {
+				updateDataKeys({ {"remaining_tearoffs", MemReaderHelpers::getRemainingTearoffs(connectionType_)} });
+			}
+
+			// Export JSON
+			if (useJsonExport_) {
+				std::string js = JsonWriter::renderJson(
+					allDataKeys_,
+					configKeyToDisplayNameMap,
+					configManager_);
+
+				if (js != lastJson_) {
+					try {
+						JsonWriter::atomicWrite(jsonPath_, js);
+						lastJson_ = std::move(js);
+					}
+					catch (const std::exception& e) {
+						Logger::getInstance().log(
+							std::string("JSON write failed: ") + e.what());
+					}
+				}
+			}
+
+			// Export HTML
 			if (useHtmlExport_) {
 				std::string html = HtmlWriter::renderHtml(
 					allDataKeys_,
@@ -231,6 +260,7 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
 	{"bike_id", "Bike ID"},
 	{"bike_name", "Bike Name"},
 	{"setup_name", "Setup Name"},
+	{"remaining_tearoffs", "Remaining Tearoffs"},
 	{"track_id", "Track ID"},
 	{"track_name", "Track Name"},
 	{"track_length", "Track Length"},
@@ -348,23 +378,26 @@ void Plugin::onRaceEvent(const SPluginsRaceEvent_t& raceEvent) {
 
 	eventType_ = raceEvent.m_iType;
 
-	// Identify the connection type
+	// Identify the connection type and gather data
 	std::string localServerName = MemReaderHelpers::getLocalServerName();
 
-	if (!localServerName.empty()) {
-		// Definitely a Host
+	if (!localServerName.empty()) { // Definitely a host
 		connectionType_ = "Host";
 		serverName_ = localServerName;
+		serverPassword_ = MemReaderHelpers::getLocalServerPassword();
+		serverLocation_ = MemReaderHelpers::getLocalServerLocation();
+		serverClientsMax_ = MemReaderHelpers::getLocalServerClientsMax();
 	}
-	else {
+	else { // Possibly a client
 		auto remoteServerSocketAddress_ = MemReaderHelpers::getRemoteServerSocketAddress();
 		remoteServerIPv6Address_ = PluginHelpers::formatIPv6MappedIPv4(remoteServerSocketAddress_);
 
-		if (!remoteServerSocketAddress_.empty()) { // Definitely a Client
+		if (!remoteServerSocketAddress_.empty()) { // Definitely a client
 			connectionType_ = "Client";
 			serverPassword_ = MemReaderHelpers::getRemoteServerPassword();
 
 			std::string connectURIServerName = PluginHelpers::getServerNameFromConnectURI(MemReaderHelpers::getConnectURIString());
+
 			if (!connectURIServerName.empty()) { // Client is using connect URI
 				serverName_ = connectURIServerName;
 
@@ -372,36 +405,28 @@ void Plugin::onRaceEvent(const SPluginsRaceEvent_t& raceEvent) {
 				serverLocation_ = "Unknown";
 				serverClientsMax_ = 0;
 			}
-			else { // Client connected normally
+			else { // Client connected via server browser
 				std::tie(remoteServerIPv6AddressMemoryAddress_, serverName_) =
 					MemReaderHelpers::getRemoteServerNameAndAddress(remoteServerSocketAddress_);
 				if (serverName_.empty()) serverName_ = "Unknown";
 
 				serverLocation_ = MemReaderHelpers::getRemoteServerLocation(remoteServerIPv6AddressMemoryAddress_);
 				serverClientsMax_ = MemReaderHelpers::getRemoteServerClientsMax(remoteServerIPv6AddressMemoryAddress_);
+
+				std::string connectURIString = PluginHelpers::buildConnectURIString(
+					remoteServerIPv6Address_,
+					serverName_,
+					serverPassword_,
+					MemReaderHelpers::getServerTrackID(),
+					MemReaderHelpers::getServerCategories()
+				);
+
+				Logger::getInstance().log("connectURIString: " + connectURIString);
 			}
 		}
-		else {
+		else { // Offline
 			connectionType_ = "Offline";
 		}
-	}
-
-	if (connectionType_ == "Client") {
-		std::string connectURIString = PluginHelpers::buildConnectURIString(
-			remoteServerIPv6Address_,
-			serverName_,
-			serverPassword_,
-			MemReaderHelpers::getServerTrackID(),
-			MemReaderHelpers::getServerCategories()
-		);
-
-		Logger::getInstance().log("connectURIString: " + connectURIString);
-	}
-
-	if (connectionType_ == "Host") {
-		serverPassword_ = MemReaderHelpers::getLocalServerPassword();
-		serverLocation_ = MemReaderHelpers::getLocalServerLocation();
-		serverClientsMax_ = MemReaderHelpers::getLocalServerClientsMax();
 	}
 
 	updateDataKeys({

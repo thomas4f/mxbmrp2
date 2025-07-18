@@ -23,6 +23,7 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"bike_id", {ConfigType::BOOL, false}},
     {"bike_name", {ConfigType::BOOL, true}},
     {"setup_name", {ConfigType::BOOL, true}},
+    {"remaining_tearoffs", {ConfigType::BOOL, false}},
     {"track_id", {ConfigType::BOOL, false}},
     {"track_name", {ConfigType::BOOL, true}},
     {"track_length", {ConfigType::BOOL, false}},
@@ -56,8 +57,9 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     // Discord integration
     { "enable_discord_rich_presence", {ConfigType::BOOL, false }},
 
-    // HTML export
+    // HTML/JSON export
     { "enable_html_export", {ConfigType::BOOL, false }},
+    { "enable_json_export", {ConfigType::BOOL, false }},
 
     // Memory configuration
     {"local_server_name_offset",{ConfigType::ULONG,0x9D6768UL}},
@@ -71,6 +73,9 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"remote_server_location_offset",{ConfigType::ULONG,0x75UL}},
     {"remote_server_ping_offset",{ConfigType::ULONG,0x58B534UL}},
     {"remote_server_clients_max_offset",{ConfigType::ULONG,0x5DUL}},
+
+    {"local_server_remaining_tearoffs_offset",{ConfigType::ULONG,0x9D78BCUL}},
+    {"remote_server_remaining_tearoffs_offset",{ConfigType::ULONG,0x108BE0CUL}},
 
     {"track_deformation_offset",{ConfigType::ULONG,0x58B708UL}},
 
