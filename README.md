@@ -16,6 +16,10 @@ _If you encounter any issues or have suggestions, please report them on the [Iss
 
 ## Installation
 
+### Using the Installer
+Download and run the latest setup (e.g., `mxbmrp2-<version>-Setup.exe`) from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page.
+
+### Manually
 Download the latest plugin package (e.g., `mxbmrp2-<version>.zip`, **not** the source code) from the [releases](https://github.com/thomas4f/mxbmrp2/releases) page and extract the contents to your MX Bikes plugins folder, typically located at: `%ProgramFiles(x86)%\Steam\steamapps\common\MX Bikes\plugins\`).
 
 Your directory should look like this:
@@ -30,10 +34,11 @@ MX Bikes\
     │   mxbmrp2.dlo
     │
     └───mxbmrp2_data\
-       Enter Sansman Italic.fnt
-       discord_game_sdk.dll
        CQ Mono.fnt
+       discord_game_sdk.dll
 ```
+
+Note: This plugin requires the Microsoft Visual C++ Redistributable ("vc_redist"). On most systems, it’s already installed, but if you don’t have it, install the latest version from [Microsoft](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version).
 
 For additional installation help, see the below video:
 
@@ -41,7 +46,7 @@ https://github.com/user-attachments/assets/f664fd29-057e-4a7e-b82b-f8635bfa4caf
 
 ## Basic configuration
 
-Optionally, you can customize `mxbmrp2.ini` in your MX Bikes profile directory (`%USERPROFILE%\Documents\Piboso\MX Bikes\`) to suit your preferences.
+Optionally, you can customize `mxbmrp2.ini` in your MX Bikes profile directory (`%USERPROFILE%\Documents\Piboso\MX Bikes\mxbmrp2\`) to suit your preferences.
 
 ### Available fields 
 Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
@@ -115,14 +120,14 @@ To broadcast your in-game status such as current track, session type, party size
 To add the overlay in OBS, perform the following:
  1. In `mxbmrp2.ini`, set `enable_html_export` to `true`. This will create and update `mxbmrp2.html` in your MX Bikes profile directory.
  2. Restart MX Bikes (or press CTRL+R) to reload the plugin with HTML export enabled.
- 3. In OBS, add a `Browser` source, tick `Local file` and set the path to the file (e.g. `%USERPROFILE%\Documents\Piboso\MX Bikes\mxbmrp2.html`).
+ 3. In OBS, add a `Browser` source, tick `Local file` and set the path to the file (e.g. `%USERPROFILE%\Documents\Piboso\MX Bikes\mxbmrp2\mxbmrp2.html`).
  4. Tweak the layout by editing the `Custom CSS` in OBS, or, preferably, create `mxbmrp2.css` in the same directory as the .html file. See examples below.
  5. Adjust the width, height, scaling and position of the overlay as necessary.
  
  _The contents will refresh automatically, and display the fields enabled in the configuration file. Also consider setting `default_enabled` to `false` to avoid having multiple overlays!_
  
 #### Example CSS
-Here's a few example of how to customize the HTML layout:
+Here's a few examples of how to customize the HTML layout:
 
 **PiBoSo-like**:
 
@@ -278,6 +283,9 @@ If you'd like build a HTML/CSS from scratch or do something else with the data, 
 
 ### Memory reading
 The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but it has been noted that reading the server_name may fail.
+
+## Licensing and Third-Party Software
+This project is licensed under the [MIT License](LICENSE.txt). However, the included **Discord Game SDK is **not** covered by the MIT license. It is provided under Discord's proprietary terms and is redistributed here solely as permitted by Discord's [Developer Terms of Service](https://dis.gd/discord-developer-terms-of-service).
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.

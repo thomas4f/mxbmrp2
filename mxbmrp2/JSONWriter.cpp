@@ -6,8 +6,9 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
-#include "ConfigManager.h"
 
+#include "Constants.h"
+#include "ConfigManager.h"
 #include "JSONWriter.h"
 
 namespace JsonWriter {
@@ -63,6 +64,11 @@ namespace JsonWriter {
         out << "\n}\n";
         return out.str();
     }
+
+    std::string renderNoData() {
+        return std::string("{\n  \"plugin_banner\": \"") + PLUGIN_VERSION + "\"\n}\n";
+    }
+
 
     void atomicWrite(const std::filesystem::path& path,
         const std::string& data)

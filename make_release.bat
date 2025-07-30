@@ -2,33 +2,50 @@
 REM make_release.bat
 
 @echo off
+REM --------------------------------------------------------
+REM Usage: make_release.bat <version>
+REM    e.g. make_release.bat 0.9.16
+REM --------------------------------------------------------
 
-REM Check if a release name was passed
-IF [%1] == [] (
-    echo Usage: %~0 ^<release_name^>
-    pause
+IF "%~1"=="" (
+    echo Usage: %~n0 ^<version^>
     exit /b 1
 )
 
-REM Set the release name from the parameter
-set "release=%~1"
-echo Release name is: %release%
+set "VERSION=%~1"
+set "RELEASE_NAME=mxbmrp2-v%VERSION%"
 
-REM Create the release directories
-mkdir ".\Releases\%release%\mxbmrp2_data" 2>nul
+echo.
+echo === Building release %RELEASE_NAME% ===
 
-REM Copy the mxbmrp2_data directory recursively
-xcopy ".\mxbmrp2_data" ".\Releases\%release%\mxbmrp2_data" /E /I /Y
+REM 1) Create folder structure
+mkdir ".\Releases\%RELEASE_NAME%\mxbmrp2_data" 2>nul
 
-REM Copy and rename the DLL to DLO
-copy ".\x64\Release\mxbmrp2.dll" ".\Releases\%release%\mxbmrp2.dlo"
+REM 2) Copy data directory recursively
+xcopy ".\mxbmrp2_data"    ".\Releases\%RELEASE_NAME%\mxbmrp2_data" /E /I /Y
 
-REM Copy README and LICENSE
-copy ".\README.md" ".\Releases\%release%\"
-copy ".\LICENSE.txt" ".\Releases\%release%\"
+REM 3) Copy & rename the DLL → .dlo
+copy  ".\x64\Release\mxbmrp2.dll"  ".\Releases\%RELEASE_NAME%\mxbmrp2.dlo"
 
-REM Use 7z to compress the release directory
-"C:\Program Files\7-Zip\7z.exe" a ".\Releases\%release%.zip" ".\Releases\%release%\*"
+REM 4) Copy docs
+copy  ".\README.md"   ".\Releases\%RELEASE_NAME%\" 
+copy  ".\LICENSE.txt" ".\Releases\%RELEASE_NAME%\" 
 
-echo Release package created: .\Releases\%release%.zip
+REM 5) Zip it up
+"C:\Program Files\7-Zip\7z.exe" a ".\Releases\%RELEASE_NAME%.zip" ".\Releases\%RELEASE_NAME%\*"
+
+echo.
+echo ZIP complete: Releases\%RELEASE_NAME%.zip
+
+REM 6) Build NSIS installer
+
+makensis -DPLUGIN_VERSION="%VERSION%" mxbmrp2.nsi
+
+if %ERRORLEVEL% neq 0 (
+  echo [ERROR] NSIS build failed!
+  exit /b %ERRORLEVEL%
+)
+
+echo.
+echo Installer built: mxbmrp2-v%VERSION%-Setup.exe
 pause

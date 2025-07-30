@@ -12,10 +12,13 @@ class ConfigManager;
 namespace JsonWriter {
 
     std::string escapeJson(std::string_view s);
+
     std::string renderJson(
         const std::unordered_map<std::string, std::string>& all,
         const std::vector<std::pair<std::string, std::string>>& order,
         ConfigManager& cfg);
+
+    std::string renderNoData();
 
     void atomicWrite(const std::filesystem::path& path,
         const std::string& data);

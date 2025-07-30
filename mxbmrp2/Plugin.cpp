@@ -41,12 +41,19 @@ Plugin::~Plugin() {
 
 // Initialize the plugin and other classes
 void Plugin::onStartup(const std::string& savePath) {
+	auto baseDir = std::filesystem::path(savePath) / PROFILE_DIR;
+	std::filesystem::create_directories(baseDir);
 
-	Logger::getInstance().setLogFileName(std::filesystem::path(savePath) / LOG_FILE);
-	Logger::getInstance().log("Initializing " + std::string(PLUGIN_VERSION) + " for " + std::string(HOST_VERSION));
+
+
+	Logger::getInstance().setLogFileName(baseDir / LOG_FILE);
+	Logger::getInstance().log(
+		"Initializing " + std::string(PLUGIN_VERSION) +
+		" (" + std::string(BUILD_TYPE) + ") for " + std::string(HOST_VERSION)
+	);
 
 	// Initialize ConfigManager
-	configPath_ = std::filesystem::path(savePath) / CONFIG_FILE;
+	configPath_ = baseDir / CONFIG_FILE;
 	configManager_.loadConfig(configPath_);
 
 	// Initialize MemReader
@@ -62,7 +69,7 @@ void Plugin::onStartup(const std::string& savePath) {
 	keyPressHandler_ = std::make_unique<KeyPressHandler>([this]() { this->toggleDisplay(); }, HOTKEY);
 
 	// timeTracker
-	TimeTracker::getInstance().initialize(std::filesystem::path(savePath) / TIME_TRACKER_FILE);
+	TimeTracker::getInstance().initialize(baseDir / TIME_TRACKER_FILE);
 
 	// Initialize Discord Core
 	useDiscordRichPresence_ = configManager_.getValue<bool>("enable_discord_rich_presence");
@@ -74,7 +81,7 @@ void Plugin::onStartup(const std::string& savePath) {
 
 	// HTML Export
 	useHtmlExport_ = configManager_.getValue<bool>("enable_html_export");
-	htmlPath_ = std::filesystem::path(savePath) / HTML_FILE;
+	htmlPath_ = baseDir / HTML_FILE;
 
 	if (useHtmlExport_) {
 		Logger::getInstance().log("Exporting HTML to: " + htmlPath_.string());
@@ -82,8 +89,11 @@ void Plugin::onStartup(const std::string& savePath) {
 
 	// JSON Export
 	useJsonExport_ = configManager_.getValue<bool>("enable_json_export");
-	jsonPath_ = std::filesystem::path(savePath) / JSON_FILE;
+	jsonPath_ = baseDir / JSON_FILE;
 
+	if (useJsonExport_) {
+		Logger::getInstance().log("Exporting JSON to: " + jsonPath_.string());
+	}
 
 	// Start the periodic task thread
 	runPeriodicTask_ = true;
@@ -115,7 +125,9 @@ void Plugin::onShutdown() {
 	}
 
 	// HTML Export
-	HtmlWriter::atomicWrite(htmlPath_, HtmlWriter::renderNoData());
+	if (useHtmlExport_) {
+		HtmlWriter::atomicWrite(htmlPath_, HtmlWriter::renderNoData());
+	}
 }
 
 // Periodic tasks
@@ -135,14 +147,16 @@ void Plugin::periodicTaskLoop() {
 				updateDataKeys({
 					{"server_ping", serverPing_},
 					{"server_clients", std::to_string(serverClients_) + "/" + std::to_string(serverClientsMax_)},
-					{"combo_time", TimeTracker::getInstance().getCurrentComboTime()},
-					{"total_time", TimeTracker::getInstance().getTotalTime()},
 					{"discord_status", discordManager_.getConnectionStateString()}
 				});
 			}
 
 			if (playerActivity_ == "On Track") {
-				updateDataKeys({ {"remaining_tearoffs", MemReaderHelpers::getRemainingTearoffs(connectionType_)} });
+				updateDataKeys({
+					{ "combo_time", TimeTracker::getInstance().getCurrentComboTime() },
+					{ "total_time", TimeTracker::getInstance().getTotalTime() },
+					{"remaining_tearoffs", MemReaderHelpers::getRemainingTearoffs(connectionType_)}
+				});
 			}
 
 			// Export JSON
@@ -554,5 +568,17 @@ void Plugin::toggleDisplay() {
 		HtmlWriter::atomicWrite(htmlPath_, HtmlWriter::renderNoData());
 	}
 	useHtmlExport_ = newUseHtmlExport;
+
+	bool newUseJsonExport = configManager_.getValue<bool>("enable_json_export");
+	if (newUseJsonExport && !useJsonExport_) {
+		lastJson_.clear();
+		Logger::getInstance().log("JSON export enabled.");
+	}
+	else if (!newUseJsonExport && useJsonExport_) {
+		Logger::getInstance().log("JSON export disabled.");
+		JsonWriter::atomicWrite(jsonPath_, JsonWriter::renderNoData());
+
+	}
+	useJsonExport_ = newUseJsonExport;
 }
 

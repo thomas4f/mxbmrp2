@@ -74,8 +74,13 @@ namespace HtmlWriter {
 
         // Splice into the shared template
         std::string out = HTML_TEMPLATE;
-        auto pos = out.find("{{BODY}}");
-        out.replace(pos, strlen("{{BODY}}"), body.str());
+
+        // replace BODY
+        out.replace(out.find("{{BODY}}"), 8, body.str());
+
+        // replace INTERVAL
+        out.replace(out.find("{{INTERVAL}}"), 12, std::to_string(PERIODIC_TASK_INTERVAL));
+
         return out;
     }
 

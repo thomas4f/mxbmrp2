@@ -6,10 +6,18 @@
 #include <cstddef>
 #include <filesystem>
 
+// Build info
+#if defined(_DEBUG)
+inline constexpr const char* BUILD_TYPE = "Debug";
+#elif defined(NDEBUG)
+inline constexpr const char* BUILD_TYPE = "Release";
+#endif
+
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.16";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.17";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
+inline constexpr const char* PROFILE_DIR = "mxbmrp2";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
 inline const std::filesystem::path CONFIG_FILE = "mxbmrp2.ini";
 inline const std::filesystem::path TIME_TRACKER_FILE = "mxbmrp2.dat";
@@ -134,7 +142,7 @@ static constexpr char HTML_TEMPLATE[] = R"(<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>setInterval(() => location.reload(), 1000);</script>
+    <script>setInterval(() => location.reload(), {{INTERVAL}});</script>
     <title>MXBMRP2</title>
     <link rel="stylesheet" href="mxbmrp2.css">
 </head>

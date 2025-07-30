@@ -267,7 +267,9 @@ void ConfigManager::loadConfig(const std::filesystem::path& cfgPath) {
                         if (key == "font_name") {
                             std::filesystem::path fontPath = std::filesystem::path("plugins") / DATA_DIR / value;
                             if (!std::filesystem::exists(fontPath) || !std::filesystem::is_regular_file(fontPath)) {
-                                throw std::runtime_error("Font file not found: " + fontPath.string());
+                                Logger::getInstance().log("Font file missing: " + fontPath.string() + ". Text rendering not work properly.");
+                                config_[key] = value;
+                                continue;
                             }
                         }
 
