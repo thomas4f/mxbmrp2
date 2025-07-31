@@ -1,5 +1,6 @@
 ﻿
 ; mxbmrp2.nsi
+; Build for 64-bit using https://github.com/negrutiu/nsis
 
 !define PLUGIN_NAME "MXBMRP2"
 !define PLUGIN_NAME_LC "mxbmrp2"
@@ -18,6 +19,7 @@
 !include "MUI2.nsh"
 
 SetCompressor BZIP2
+Target AMD64-Unicode
 
 ; Welcome to MXBMRP2 Setup
 !define MUI_WELCOMEPAGE_TEXT "Setup will guide you through the installation or upgrade of ${PLUGIN_NAME} for MX Bikes.$\n$\nIt will try to find your MX Bikes installation automatically.$\nIf it can't, you'll be asked to locate it.$\n$\nClick Next to continue."

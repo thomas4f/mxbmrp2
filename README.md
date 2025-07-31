@@ -78,7 +78,6 @@ Below is a brief description of the available fields within the `Draw configurat
 | combo_time          | 00h 12m                           | Track time on the current bike/track combination. |
 | total_time          | 85h 50m                           | Total track time across all combinations. |
 | discord_status      | Connected                         | Indicates the status of Discord Rich Presence. |
-| enable_html_export  |                                   | Creates `mxbmrp2.html` that can be included in OBS Studio. |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
