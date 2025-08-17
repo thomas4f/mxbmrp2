@@ -52,32 +52,36 @@ Optionally, you can customize `mxbmrp2.ini` in your MX Bikes profile directory (
 Below is a brief description of the available fields within the `Draw configuration` section that you set to `true` to enable:
 | Field               | Example                           | Notes                             |
 |---------------------|-----------------------------------|-----------------------------------|
-| plugin_banner       | mxbmrp2 v0.9.14                   |                                   |
-| race_number         |                                   | Prefixed to rider_name            |
-| rider_name          | 4 Thomas                          |                                   |
-| bike_category       | MX2 OEM                           |                                   |
-| bike_id             | MX2OEM_2023_KTM_250_SX-F          |                                   |
-| bike_name           | KTM 250 SX-F 2023                 |                                   |
-| setup_name          | Default                           | Briefly highlighted in red if "Default" is used. |
- | remaining_tearoffs | 21                                |                                   |
-| track_id            | HM_swedish_midsummer_carnage_2    |                                   |
-| track_name          | HM \| Swedish Midsummer Carnage 2 |                                   |
-| track_length        | 965 m                             |                                   |
-| connection_type     | Host                              | `Offline` means "Testing", `Client` means you're "Racing" online and `Host` refers to the "Host World" option. | 
-| server_name         | thomas4f                          |                                   |
-| server_password     | verySecret                        |                                   |
-| server_location     | Europe                            | The server location as indicated by the administrator. | 
-| server_ping         | 147 ms                            | The response time (ping) when racing online. |
-| server_clients      | 12/24                             | The number of players connected to the server. |
-| event_type          | Race                              |                                   |
-| session_type        | Warmup                            |                                   |
-| session_state       | In progress                       |                                   |
-| session_duration    | 10:00 +2 laps                     | The elapsed/remaining time and/or number of laps. |
-| conditions          | Clear                             |                                   |
-| air_temperature     | 20°C                              |                                   |
-| combo_time          | 00h 12m                           | Track time on the current bike/track combination. |
-| total_time          | 85h 50m                           | Total track time across all combinations. |
-| discord_status      | Connected                         | Indicates the status of Discord Rich Presence. |
+| plugin_banner       | mxbmrp2 v0.9.14                   | Plugin name and version           |
+| race_number         |                                   | Race number (prefixed to rider_name) |
+| rider_name          | 4 Thomas                          | Name of the current rider         |
+| bike_category       | MX2 OEM                           | Bike category                     |
+| bike_id             | MX2OEM_2023_KTM_250_SX-F          | Bike ID                           |
+| bike_name           | KTM 250 SX-F 2023                 | Bike name                         |
+| setup_name          | Default                           | Setup name (briefly highlighted in red if "Default" is used) |
+| remaining_tearoffs  | 21                                | Number of remaining tearoffs      |
+| track_id            | HM_swedish_midsummer_carnage_2    | Track ID                          |
+| track_name          | HM \| Swedish Midsummer Carnage 2 | Track name                        |
+| track_length        | 965 m                             | Track length                      |
+| connection_type     | Host                              | Connection type (`Offline` means "Testing", `Client` means you're "Racing" online and `Host` refers to the "Host World" option) | 
+| server_name         | thomas4f                          | Server name (must be at least 2 characters long) |
+| server_password     | verySecret                        | Server password                  |
+| server_location     | Europe                            | Server location                  | 
+| server_ping         | 147 ms                            | Response time (ping) when racing online |
+| server_clients      | 12/24                             | Number of clients connected to the server |
+| event_type          | Race                              | Event type (Testing, Race, etc.)  |
+| session_type        | Warmup                            | Session type (Practice, Warmup, etc.) |
+| session_state       | In progress                       | Session state (In Progress, Completed, etc.) |
+| session_duration    | 10:00 +2 laps                     | Elapsed/remaining time and/or number of laps |
+| conditions          | Clear                             | Track conditions                  |
+| air_temperature     | 20°C                              | Air temperature (in Celcius)      |
+| combo_time          | 00h 12m                           | Track time on the current bike/track combination |
+| total_time          | 85h 50m                           | Track time across all combinations |
+| session_pb          | 1:00.251                          | Personal best in the current session |
+| alltime_pb          | 0:59.582                          | Personal best across all sessions |
+| combo_laps          | 5                                 | Number of laps on the current bike/track combination |
+| total_laps          | 1337                              | Number of laps across all bike/track combinations |
+| discord_status      | Connected                         | Status of the Discord Rich Presence |
 
 ### Toggle HUD display
 Press `CTRL+R` to toggle the HUD on or off. Note that **this will also reload any changes made to the configuration file**.
@@ -108,9 +112,9 @@ By default, the plugin uses the `CQ Mono` font to stay consistent with the [MaxH
 To generate additional fonts, you can use the `fontgen` utility provided by PiBoSo. For details, see [this forum post](https://forum.piboso.com/index.php?topic=1458.msg20183#msg20183) and refer to `fontgen.cfg`.
 
 ### Time tracking
-The plugin tracks your actual on-track time, reporting both your "combo" time (i.e. total time spent on a specific track with a specific bike) and your cumulative total time across all tracks and bikes.
+The plugin keeps a persistent record of your riding history, logging various statistics such as per-track/bike total time, lap counts, and all-time personal bests, etc.
 
-The recorded times can be viewed in `mxbmrp2-times.csv` in your MX Bikes profile directory (to reset the stats, remove `mxbmrp2.dat`).
+The recorded stats can be viewed in-game or in `mxbmrp2-times.csv` within your MX Bikes profile directory (to reset the stats, remove `mxbmrp2.dat`).
 
 ### Discord Rich Presence
 To broadcast your in-game status such as current track, session type, party size, and server name, set `enable_discord_rich_presence=true` in the configuration file.

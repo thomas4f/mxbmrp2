@@ -37,6 +37,8 @@ public:
     void onRunStop();
     void onShutdown();
     void onRaceClassification(const SPluginsRaceClassification_t& raceClassification);
+    void onRunLap(const SPluginsBikeLap_t& lapData);
+    void onRunSplit(const SPluginsBikeSplit_t& splitData);
 
     // Method to retrieve the keys to display
     std::vector<std::string> getDisplayKeys();
@@ -82,6 +84,7 @@ private:
     int eventType_ = 0;
     std::string trackID_ = "";
     std::string bikeID_ = "";
+    std::string bikeCategory_ = "";
     std::string remoteServerIPv6Address_ = "";
     uintptr_t remoteServerIPv6AddressMemoryAddress_ = 0;
     std::string serverName_ = "";
@@ -92,6 +95,7 @@ private:
     int serverClients_ = 0;
     int serverClientsMax_ = 0;
     int numLaps_ = 0;
+    std::vector<int> currentLapSplitsMs_;
     int sessionLength_ = 0;
     int currentLap_ = 0;
     int sessionTime_ = 0;

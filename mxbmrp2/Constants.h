@@ -14,13 +14,13 @@ inline constexpr const char* BUILD_TYPE = "Release";
 #endif
 
 // Plugin
-inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.17";
+inline constexpr const char* PLUGIN_VERSION = "mxbmrp2-v0.9.18";
 inline constexpr const char* HOST_VERSION = "MX Bikes beta20b";
 inline constexpr const char* DATA_DIR = "mxbmrp2_data";
 inline constexpr const char* PROFILE_DIR = "mxbmrp2";
 inline const std::filesystem::path LOG_FILE = "mxbmrp2.log";
 inline const std::filesystem::path CONFIG_FILE = "mxbmrp2.ini";
-inline const std::filesystem::path TIME_TRACKER_FILE = "mxbmrp2.dat";
+inline const std::filesystem::path DAT_FILE = "mxbmrp2.dat";
 inline const std::filesystem::path HTML_FILE = "mxbmrp2.html";
 inline const std::filesystem::path JSON_FILE = "mxbmrp2.json";
 
@@ -91,6 +91,10 @@ air_temperature={{air_temperature}}
 track_deformation={{track_deformation}}
 combo_time={{combo_time}}
 total_time={{total_time}}
+session_pb={{session_pb}}
+alltime_pb={{alltime_pb}}
+combo_laps={{combo_laps}}
+total_laps={{total_laps}}
 discord_status={{discord_status}}
 
 # HUD visibility and placement

@@ -39,9 +39,13 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"session_duration", {ConfigType::BOOL, true}},
     {"conditions", {ConfigType::BOOL, false}},
     {"air_temperature", {ConfigType::BOOL, false}},
-    {"track_deformation",{ConfigType::BOOL, false}},
+    {"track_deformation", {ConfigType::BOOL, false}},
     {"combo_time", {ConfigType::BOOL, false}},
-    {"total_time", {ConfigType::BOOL, true}},
+    {"total_time", {ConfigType::BOOL, false}},
+    {"session_pb", { ConfigType::BOOL, false }},
+    {"alltime_pb", { ConfigType::BOOL, true }},
+    {"combo_laps", { ConfigType::BOOL, false }},
+    {"total_laps", { ConfigType::BOOL, false }},
     {"discord_status", { ConfigType::BOOL, false }},
 
     // GUI configuration

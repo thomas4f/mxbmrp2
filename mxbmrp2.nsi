@@ -2,6 +2,8 @@
 ; mxbmrp2.nsi
 ; Build for 64-bit using https://github.com/negrutiu/nsis
 
+!include "MUI2.nsh"
+
 !define PLUGIN_NAME "MXBMRP2"
 !define PLUGIN_NAME_LC "mxbmrp2"
 !define PLUGIN_PUBLISHER "thomas4f"
@@ -16,10 +18,19 @@
 !define VC_REDIST_EXE_PATH "$TEMP\vc_redist.x64.exe"
 !define REG_UNINSTALL_KEY_PATH "Software\Microsoft\Windows\CurrentVersion\Uninstall"
 
-!include "MUI2.nsh"
+; General Settings
+Name "${PLUGIN_NAME}"
 
-SetCompressor BZIP2
+RequestExecutionLevel admin
+SetCompressor /SOLID LZMA
 Target AMD64-Unicode
+OutFile "Releases\${PLUGIN_NAME_LC}-v${PLUGIN_VERSION}-Setup.exe"
+
+; Variables
+Var pluginInstallActionChoice
+Var isPluginAlreadyInstalled
+Var MXBikesInstallPath
+Var isMXBikesPathAutoDetected
 
 ; Welcome to MXBMRP2 Setup
 !define MUI_WELCOMEPAGE_TEXT "Setup will guide you through the installation or upgrade of ${PLUGIN_NAME} for MX Bikes.$\n$\nIt will try to find your MX Bikes installation automatically.$\nIf it can't, you'll be asked to locate it.$\n$\nClick Next to continue."
@@ -50,19 +61,16 @@ Page Custom ShowExistingPluginInstallPage RunUninstaller
 !insertmacro MUI_UNPAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
-
-; General Settings
-Name "${PLUGIN_NAME}"
-OutFile "Releases\${PLUGIN_NAME_LC}-v${PLUGIN_VERSION}-Setup.exe"
-RequestExecutionLevel admin
-
 ShowInstDetails show
 ShowUninstDetails show
 
-Var pluginInstallActionChoice
-Var isPluginAlreadyInstalled
-Var MXBikesInstallPath
-Var isMXBikesPathAutoDetected
+; File properties
+VIProductVersion "${PLUGIN_VERSION}.0"
+VIAddVersionKey "ProductName" "MXBMRP2"
+VIAddVersionKey "LegalCopyright" "thomas4f"
+VIAddVersionKey "FileDescription" "https://github.com/thomas4f/mxbmrp2"
+VIAddVersionKey "FileVersion" "${__DATE__} ${__TIME__}"
+VIAddVersionKey "ProductVersion" "${PLUGIN_VERSION}"
 
 ; .onInit: Determine registry view & locate MX Bikes
 Function .onInit

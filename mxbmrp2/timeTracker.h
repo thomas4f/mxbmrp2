@@ -8,20 +8,27 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include <ctime>               // for std::time_t
+#include <ctime>
+#include <limits>
+#include <array>
+#include <vector>
 
 class TimeTracker {
 public:
     static TimeTracker& getInstance();
 
-    // Now takes the full file path...
     void initialize(const std::filesystem::path& csvPath);
-
-    void startRun(const std::string& trackID, const std::string& bikeID);
+    void startRun(const std::string & trackID, const std::string & bikeID, const std::string & bikeCategory, const std::string & setupName);
+    void recordLap(const std::string& trackID, const std::string& bikeID, int lapTimeMs, const std::vector<int>& cumulativeSplitsMs);
     void endRun(const std::string& trackID, const std::string& bikeID);
 
-    std::string getCurrentComboTime() const;
-    std::string getTotalTime()        const;
+    std::string getComboTime() const;
+    std::string getTotalTime() const;
+    std::string getSessionPB() const;
+    std::string getAlltimePB() const;
+    std::string getComboLapCount() const;
+    std::string getTotalLapCount() const;
+    void resetSessionPB();
 
     void save() const;
 
@@ -35,11 +42,18 @@ private:
     using Seconds = std::chrono::seconds;
 
     struct ComboKey {
-        std::string track, bike;
-        bool operator==(ComboKey const& o) const {
-            return track == o.track && bike == o.bike;
+        std::string track;
+        std::string bike;
+
+        bool operator==(ComboKey const& rhs) const {
+            return track == rhs.track
+                && bike == rhs.bike;
+        }
+        bool operator!=(ComboKey const& rhs) const {
+            return !(*this == rhs);
         }
     };
+
     struct ComboKeyHash {
         size_t operator()(ComboKey const& k) const noexcept {
             return std::hash<std::string>()(k.track) * 31
@@ -49,15 +63,24 @@ private:
 
     void load();
 
-    std::filesystem::path                                   _csvPath;
-    mutable std::mutex                                      _mtx;
-    ComboKey                                                _activeKey;
-    Clock::time_point                                       _runStart;
-    bool                                                    _isRunning{ false };
-    std::unordered_map<ComboKey, Seconds, ComboKeyHash>     _comboTotals;
-    Seconds                                                 _total{ 0 };
+    std::filesystem::path _datPath;
+    mutable std::mutex _mtx;
+    ComboKey _activeKey;
+    Clock::time_point _runStart;
+    bool _isRunning{ false };
+    std::string _activeSetupName;
+    std::unordered_map<ComboKey, Seconds, ComboKeyHash> _comboTotals;
+    Seconds _total{ 0 };
 
-    // NEW: track first and last run timestamps (epoch seconds)
     std::unordered_map<ComboKey, std::time_t, ComboKeyHash> _firstRun;
     std::unordered_map<ComboKey, std::time_t, ComboKeyHash> _lastRun;
+
+    int _sessionLapCount = 0;
+    std::unordered_map<ComboKey, int, ComboKeyHash> _alltimeBestLapMs;
+    std::unordered_map<ComboKey, std::time_t, ComboKeyHash> _alltimeBestLapTs;
+    std::unordered_map<ComboKey, std::array<int, 3>, ComboKeyHash> _alltimeBestLapSplitsMs;
+    int _sessionBestLapMs = (std::numeric_limits<int>::max)();
+    std::unordered_map<ComboKey, int, ComboKeyHash> _alltimeLapCount;
+    std::unordered_map<ComboKey, std::string, ComboKeyHash> _bikeCategory;
+    std::unordered_map<ComboKey, std::string, ComboKeyHash> _alltimeBestLapSetup;
 };

@@ -102,6 +102,19 @@ extern "C" {
         int m_iNumEntries;
     } SPluginsRaceClassification_t;
 
+    typedef struct {
+        int m_iLapNum;
+        int m_iInvalid;
+        int m_iLapTime;
+        int m_iBest;
+    } SPluginsBikeLap_t;
+
+    typedef struct {
+        int m_iSplit;
+        int m_iSplitTime;
+        int m_iBestDiff;
+    } SPluginsBikeSplit_t;
+
     // Functions exported to the game
     __declspec(dllexport) const char* GetModID();
     __declspec(dllexport) int GetModDataVersion();
@@ -122,4 +135,6 @@ extern "C" {
     __declspec(dllexport) void RunStart();
     __declspec(dllexport) void RunStop();
     __declspec(dllexport) void RaceClassification(void* _pData, int _iDataSize, void* _pArray, int   _iElemSize);
+   __declspec(dllexport) void RunLap(void* _pData, int _iDataSize);
+   __declspec(dllexport) void RunSplit(void* _pData, int _iDataSize);
 }

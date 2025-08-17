@@ -223,3 +223,16 @@ __declspec(dllexport) void RaceClassification(void* _pData, int   _iDataSize, vo
         Plugin::getInstance().onRaceClassification(*psRaceClassification);
     }
 }
+
+// RunLap
+__declspec(dllexport) void RunLap(void* _pData, int _iDataSize) {
+    SPluginsBikeLap_t* psLapData = (SPluginsBikeLap_t*)_pData;
+    Plugin::getInstance().onRunLap(*psLapData);
+}
+
+// RunSplit: Called when a split is crossed
+__declspec(dllexport) void RunSplit(void* _pData, int _iDataSize) {
+    SPluginsBikeSplit_t* psSplitData = (SPluginsBikeSplit_t*)_pData;
+    Plugin::getInstance().onRunSplit(*psSplitData);
+}
+
