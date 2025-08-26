@@ -115,6 +115,37 @@ extern "C" {
         int m_iBestDiff;
     } SPluginsBikeSplit_t;
 
+
+    /* The documentation for this one does not seem correct.
+	 * 
+     * typedef struct {
+     *   int m_iSession;
+     *   int m_iRaceNum;
+     *   int m_iCommunication;
+     *   int m_iState;
+     *   int m_iReason;
+     *   int m_iOffence;
+     *   int m_iLap;
+     *   int m_iType;
+     *   int m_iTime;
+     * } SPluginsRaceCommunication_t;
+     * 
+     * My best guess after comparing with GBP/KRP is below:
+     */
+
+    typedef struct {
+        int m_iSession;         // Session (7, not 6 for Race2)
+        int m_iRaceNum;         // Race number
+        int m_iCommunication;   // 2 for penalty
+        int m_iState;           // 0 for penalty
+        int m_iReason;          // 0 for penalty
+        int m_iOffence;         // 2 for cutting
+        int m_iLap;             // Lap (0-based)
+        int m_iIndex;           // Always 32758?
+        int m_iType;            // 0 for penalty
+        int m_iTime;            // time in s (not ms)
+    } SPluginsRaceCommunication_t;
+
     // Functions exported to the game
     __declspec(dllexport) const char* GetModID();
     __declspec(dllexport) int GetModDataVersion();
@@ -137,4 +168,5 @@ extern "C" {
     __declspec(dllexport) void RaceClassification(void* _pData, int _iDataSize, void* _pArray, int   _iElemSize);
    __declspec(dllexport) void RunLap(void* _pData, int _iDataSize);
    __declspec(dllexport) void RunSplit(void* _pData, int _iDataSize);
+   __declspec(dllexport) void RaceCommunication(void* _pData, int _iDataSize);
 }

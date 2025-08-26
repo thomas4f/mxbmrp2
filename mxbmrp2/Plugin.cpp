@@ -141,14 +141,14 @@ void Plugin::periodicTaskLoop() {
 			}
 			if (connectionType_ == "Host" || connectionType_ == "Client") {
 				serverClients_ = MemReaderHelpers::getServerClientsCount();
-				
+
 				updateDataKeys({
 					{"server_ping", serverPing_},
 					{"server_clients", std::to_string(serverClients_) + "/" + std::to_string(serverClientsMax_)},
-				});
+					});
 			}
 
-			if (playerActivity_ == "On Track") {
+			if (playerActivity_ == "On Track" && !isPaused_) {
 				updateDataKeys({
 					{ "combo_time", TimeTracker::getInstance().getComboTime() },
 					{ "total_time", TimeTracker::getInstance().getTotalTime() },
@@ -292,6 +292,7 @@ const std::vector<std::pair<std::string, std::string>> Plugin::configKeyToDispla
 	{"conditions", "Conditions"},
 	{"air_temperature", "Air Temperature"},
 	{"track_deformation", "Track Deformation"},
+	{"cut_penalty", "Cut Penalty"},
 	{"combo_time", "Combo Track Time"},
 	{"total_time", "Total Track Time"},
 	{"session_pb", "Session PB" },
@@ -337,6 +338,7 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
 	std::lock_guard<std::mutex> lk(mutex_);
 	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
+	isPaused_ = false;
 	playerActivity_ = "On Track";
 	Logger::getInstance().log(playerActivity_);
 
@@ -356,7 +358,8 @@ void Plugin::onRunInit(const SPluginsBikeSession_t& sessionData) {
 		{"session_pb", TimeTracker::getInstance().getSessionPB()},
 		{"alltime_pb", TimeTracker::getInstance().getAlltimePB()},
         {"combo_laps", TimeTracker::getInstance().getComboLapCount()},
-        {"total_laps", TimeTracker::getInstance().getTotalLapCount()}
+        {"total_laps", TimeTracker::getInstance().getTotalLapCount()},
+        {"cut_penalty", "0s"}
 	});
 }
 
@@ -479,7 +482,8 @@ void Plugin::onRaceAddEntry(const SPluginsRaceAddEntry_t& raceAddEntry) {
 	if (std::string_view{ raceAddEntry.m_szName } == allDataKeys_["rider_name"] &&
 		std::string_view{ raceAddEntry.m_szBikeName } == allDataKeys_["bike_name"])
 	{
-		updateDataKeys({ {"race_number", std::to_string(raceAddEntry.m_iRaceNum)} });
+		raceNum_ = raceAddEntry.m_iRaceNum;
+		updateDataKeys({ {"race_number", std::to_string(raceNum_)} });
 	}
 }
 
@@ -506,6 +510,7 @@ void Plugin::onEventDeinit() {
 	TimeTracker::getInstance().save();
 
 	playerActivity_ = DEFAULT_PLAYER_ACTIVITY;
+	raceNum_ = 0;
 	eventType_ = 0;
 	trackID_.clear();
 	bikeID_.clear();
@@ -523,6 +528,7 @@ void Plugin::onEventDeinit() {
 	sessionLength_ = 0;
 	currentLap_ = 0;
 	sessionTime_ = 0;
+	penaltyAccumulated_ = 0;
 
 	allDataKeys_.clear();
 	dataKeysToDisplay_.clear();
@@ -530,12 +536,6 @@ void Plugin::onEventDeinit() {
 	updateDataKeys({ { "plugin_banner", PLUGIN_VERSION } });
 
 	Logger::getInstance().log(playerActivity_);
-}
-
-// RunStart - Pause/Unpause
-void Plugin::onRunStart() {
-	Logger::getInstance().log(std::string(__func__) + " handler triggered");
-	// Not needed yet.
 }
 
 // RunLap
@@ -549,41 +549,54 @@ void Plugin::onRunLap(const SPluginsBikeLap_t& lapData) {
 		// Pass cumulative splits captured so far; the game does NOT send a split at S/F,
 		// so we derive the last segment inside TimeTracker from lap time.
 		TimeTracker::getInstance().recordLap(trackID_, bikeID_, lapData.m_iLapTime, currentLapSplitsMs_);
+		TimeTracker::getInstance().save();
 
 		updateDataKeys({
 			{"session_pb", TimeTracker::getInstance().getSessionPB()},
 			{"alltime_pb", TimeTracker::getInstance().getAlltimePB()},
 			{"combo_laps", TimeTracker::getInstance().getComboLapCount()},
 			{"total_laps", TimeTracker::getInstance().getTotalLapCount()}
-			});
+		});
 	}
 
-	// NEW: prepare for the next lap's splits
+	TimeTracker::getInstance().save();
 	currentLapSplitsMs_.clear();
 }
 
 // RunSplit
 void Plugin::onRunSplit(const SPluginsBikeSplit_t& splitData) {
 	std::lock_guard<std::mutex> lk(mutex_);
-	Logger::getInstance().log(
-		"RunSplit handler: split=" + std::to_string(splitData.m_iSplit)
-		+ " time=" + std::to_string(splitData.m_iSplitTime) + "ms"
-		+ " bestDiff=" + std::to_string(splitData.m_iBestDiff) + "ms"
-	);
+	Logger::getInstance().log(std::string(__func__) + " handler triggered");
 
-	// Store cumulative split times by index (game uses cumulative times).
-	// There are exactly 2 splits per track, indices 0 and 1.
 	size_t idx = static_cast<size_t>(splitData.m_iSplit);
 	if (idx > 10) return; // sanity guard
 	if (currentLapSplitsMs_.size() <= idx) currentLapSplitsMs_.resize(idx + 1, 0);
 	currentLapSplitsMs_[idx] = splitData.m_iSplitTime;
 }
 
-
-// RunStop - Pause/Unpause
-void Plugin::onRunStop() {
+void Plugin::onRaceCommunication(const SPluginsRaceCommunication_t& raceComm) {
+	std::lock_guard<std::mutex> lk(mutex_);
 	Logger::getInstance().log(std::string(__func__) + " handler triggered");
-	// Not needed yet.
+
+	if (raceComm.m_iRaceNum == raceNum_) {
+		Logger::getInstance().log("cutting!");
+		penaltyAccumulated_ += raceComm.m_iTime;
+		updateDataKeys({ {"cut_penalty", std::to_string(penaltyAccumulated_) + "s"} });
+	}
+}
+
+// RunStart - Start/Resume
+void Plugin::onRunStart() {
+	std::lock_guard<std::mutex> lk(mutex_);
+	Logger::getInstance().log(std::string(__func__) + " handler triggered");
+	isPaused_ = false;
+}
+
+// RunStop - Pause
+void Plugin::onRunStop() {
+	std::lock_guard<std::mutex> lk(mutex_);
+	Logger::getInstance().log(std::string(__func__) + " handler triggered");
+	isPaused_ = true;
 }
 
 // Define the KeyPressHandler callback function
@@ -640,4 +653,3 @@ void Plugin::toggleDisplay() {
 	}
 	useJsonExport_ = newUseJsonExport;
 }
-

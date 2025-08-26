@@ -236,3 +236,11 @@ __declspec(dllexport) void RunSplit(void* _pData, int _iDataSize) {
     Plugin::getInstance().onRunSplit(*psSplitData);
 }
 
+// RaceCommunication: Called when a penalty or state change occurs
+__declspec(dllexport) void RaceCommunication(void* _pData, int _iDataSize) {
+    SPluginsRaceCommunication_t* psRaceCommunication = (SPluginsRaceCommunication_t*)_pData;
+
+    if (psRaceCommunication->m_iCommunication == 2 && psRaceCommunication->m_iOffence == 2 && psRaceCommunication->m_iTime > 0) {
+        Plugin::getInstance().onRaceCommunication(*psRaceCommunication);
+    }
+}

@@ -89,6 +89,7 @@ session_duration={{session_duration}}
 conditions={{conditions}}
 air_temperature={{air_temperature}}
 track_deformation={{track_deformation}}
+cut_penalty={{cut_penalty}}
 combo_time={{combo_time}}
 total_time={{total_time}}
 session_pb={{session_pb}}

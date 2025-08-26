@@ -40,6 +40,7 @@ const std::unordered_map<std::string, ConfigManager::ConfigOption> ConfigManager
     {"conditions", {ConfigType::BOOL, false}},
     {"air_temperature", {ConfigType::BOOL, false}},
     {"track_deformation", {ConfigType::BOOL, false}},
+    {"cut_penalty", {ConfigType::BOOL, false}},
     {"combo_time", {ConfigType::BOOL, false}},
     {"total_time", {ConfigType::BOOL, false}},
     {"session_pb", { ConfigType::BOOL, false }},

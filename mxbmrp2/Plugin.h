@@ -39,6 +39,7 @@ public:
     void onRaceClassification(const SPluginsRaceClassification_t& raceClassification);
     void onRunLap(const SPluginsBikeLap_t& lapData);
     void onRunSplit(const SPluginsBikeSplit_t& splitData);
+    void onRaceCommunication(const SPluginsRaceCommunication_t& raceComm);
 
     // Method to retrieve the keys to display
     std::vector<std::string> getDisplayKeys();
@@ -81,6 +82,7 @@ private:
 
     // Custom data keys
     std::string playerActivity_ = DEFAULT_PLAYER_ACTIVITY;
+    int raceNum_ = 0;
     int eventType_ = 0;
     std::string trackID_ = "";
     std::string bikeID_ = "";
@@ -99,6 +101,7 @@ private:
     int sessionLength_ = 0;
     int currentLap_ = 0;
     int sessionTime_ = 0;
+    int penaltyAccumulated_ = 0;
 
     // Stores all key-value pairs of data for processing and display.
     std::unordered_map<std::string, std::string> allDataKeys_;
@@ -116,6 +119,7 @@ private:
     std::thread periodicTaskThread_;
     std::atomic<bool> runPeriodicTask_{ true };
     void periodicTaskLoop();
+    bool isPaused_ = false;
 
     // Callback function to toggle display 
     void toggleDisplay();
