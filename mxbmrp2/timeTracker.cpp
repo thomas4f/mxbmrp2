@@ -71,6 +71,7 @@ void TimeTracker::load() {
     _alltimeLapCount.clear();
     _bikeCategory.clear();
     _alltimeBestLapSplitsMs.clear();
+    _alltimeBestLapSetup.clear();
     _total = Seconds{ 0 };
 
     // Must at least have track & bike columns
@@ -134,6 +135,10 @@ void TimeTracker::load() {
                 if (bestMs > 0) {
                     _alltimeBestLapTs[key] = std::stoll(tok[bestlap_ts]);
                     _alltimeBestLapMs[key] = bestMs;
+
+                    if (bestlap_setup >= 0 && int(tok.size()) > bestlap_setup) {
+                        _alltimeBestLapSetup[key] = tok[bestlap_setup];
+                    }
                 }
             }
 

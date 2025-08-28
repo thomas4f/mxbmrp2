@@ -288,7 +288,7 @@ If you'd like build a HTML/CSS from scratch or do something else with the data, 
 The game's plugin system lacks certain fields (e.g., whether you’re in testing, or if you're a host or client, and a few other things). Instead, this data is extracted from memory. This seems to work well, but it has been noted that reading the server_name may fail.
 
 ## Licensing and Third-Party Software
-This project is licensed under the [MIT License](LICENSE.txt). However, the included **Discord Game SDK is **not** covered by the MIT license. It is provided under Discord's proprietary terms and is redistributed here solely as permitted by Discord's [Developer Terms of Service](https://dis.gd/discord-developer-terms-of-service).
+This project is licensed under the [MIT License](LICENSE.txt). However, the included Discord Game SDK is **not** covered by the MIT license. It is provided under Discord's proprietary terms and is redistributed here solely as permitted by Discord's [Developer Terms of Service](https://dis.gd/discord-developer-terms-of-service).
 
 ## Credits
  - My previous iteration of [MXBMRP](https://github.com/thomas4f/mxbmrp) (stand-alone Python app) for the memory addresses.
